@@ -54,11 +54,11 @@
             transform: translateX(0);
         }
 
-        /* === MODIFICADO: Botones del panel en una línea === */
+        /* Botones del panel en una línea */
         .panel-button {
             display: block;
             width: 100%;
-            padding: 0.75rem 1rem; /* Reducido el padding horizontal (antes 1.5rem) */
+            padding: 0.75rem 1rem; 
             margin-bottom: 0.75rem; 
             text-align: left;
             font-weight: 600;
@@ -68,8 +68,6 @@
             background-color: #b93b6a; 
             border: 1px solid #d19788; 
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0,0,0,0.1); 
-            
-            /* Nuevas propiedades para una sola línea */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -115,16 +113,46 @@
             border-bottom: 1px solid #b93b6a; 
         }
         
-        /* --- Galería de Imágenes --- */
+        /* === MODIFICADO: Galería de Imágenes === */
         .gallery-item {
             aspect-ratio: 1 / 1; 
-            background-color: #b93b6a;
+            background-color: #000; /* Fondo negro para 'object-contain' */
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
+            position: relative; /* Necesario para los botones de admin */
         }
         .gallery-item:hover {
             transform: scale(1.05);
             box-shadow: 0 10px 20px rgba(209, 151, 136, 0.2); 
+        }
+        
+        /* === NUEVO: Estilos para botones de Admin en la galería === */
+        .admin-controls {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            gap: 0.25rem;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+        .gallery-item:hover .admin-controls {
+            opacity: 1;
+        }
+        .admin-btn {
+            padding: 0.375rem; /* 6px */
+            border-radius: 9999px; /* full */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+        .admin-btn:hover {
+            transform: scale(1.1);
+        }
+        .admin-btn-edit {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .admin-btn-delete {
+            background-color: #dc2626; /* red-600 */
         }
 
         .hidden {
@@ -171,7 +199,7 @@
             <nav class="px-2">
                 <a href="#" class="panel-button">Ver todos los diseños</a>
                 <a href="#" class="panel-button">Agendar una Cita</a>
-                <a href="#" id="admin-link" class="panel-button hidden">Administrar Diseños</a>
+                <a href="#" id="admin-link" class="panel-button hidden">+ Administrar Diseños</a>
             </nav>
         </div>
         
@@ -251,9 +279,11 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
 
-            <h2 class="text-2xl font-bold text-center mb-6 font-cursive">Administrar Diseño</h2>
+            <h2 id="admin-modal-title" class="text-2xl font-bold text-center mb-6 font-cursive"></h2>
             
             <form id="admin-form">
+                <input type="hidden" id="edit-doc-id">
+                
                 <div class="mb-4">
                     <label for="filename-input" class="block text-sm font-semibold mb-2">Nombre del Archivo</label>
                     <input type="text" id="filename-input"
@@ -268,8 +298,9 @@
                               placeholder="Ej: Uñas acrílicas con efecto espejo..."></textarea>
                 </div>
                 <div id="admin-error" class="text-red-600 text-sm text-center mb-4 hidden"></div>
+                
                 <button type="submit" id="admin-submit-btn" class="w-full bg-pink-600 text-white py-2 rounded-md font-bold hover:bg-pink-700 transition-colors flex items-center justify-center">
-                    <span id="admin-submit-text">Guardar Diseño</span>
+                    <span id="admin-submit-text"></span>
                     <div id="admin-spinner" class="spinner hidden"></div>
                 </button>
             </form>
@@ -316,13 +347,17 @@
             signOut, 
             onAuthStateChanged 
         } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        // === NUEVO: Imports para Update y Delete ===
         import { 
             getFirestore, 
             collection, 
             addDoc, 
             getDocs,
             query,
-            orderBy
+            orderBy,
+            doc,        // <-- Para referenciar un documento
+            updateDoc,  // <-- Para actualizar
+            deleteDoc   // <-- Para borrar
         } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         
         // Tu configuración de Firebase
@@ -340,7 +375,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // === Referencias a elementos del DOM (Login) ===
+        // --- Referencias a elementos del DOM (Login) ---
         const adminLoginBtn = document.getElementById('admin-login-btn');
         const loginModal = document.getElementById('login-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
@@ -349,55 +384,83 @@
         const passwordInput = document.getElementById('password-input');
         const loginError = document.getElementById('login-error');
         
-        // === Referencias a elementos del Panel ===
+        // --- Referencias a elementos del Panel ---
         const adminLink = document.getElementById('admin-link');
         const logoutBtn = document.getElementById('logout-btn');
 
-        // === Referencias a elementos (Admin CRUD) ===
+        // --- MODIFICADO: Referencias a elementos (Admin CRUD) ---
         const adminModal = document.getElementById('admin-modal');
+        const adminModalTitle = document.getElementById('admin-modal-title'); // <-- Título
         const closeAdminModalBtn = document.getElementById('close-admin-modal-btn');
         const adminForm = document.getElementById('admin-form');
+        const editDocIdInput = document.getElementById('edit-doc-id'); // <-- ID oculto
         const filenameInput = document.getElementById('filename-input'); 
         const descriptionInput = document.getElementById('description-input');
         const adminError = document.getElementById('admin-error');
         const adminSubmitBtn = document.getElementById('admin-submit-btn');
-        const adminSubmitText = document.getElementById('admin-submit-text');
+        const adminSubmitText = document.getElementById('admin-submit-text'); // <-- Texto del botón
         const adminSpinner = document.getElementById('admin-spinner');
         const galleryGrid = document.getElementById('gallery-grid');
+        
+        // --- Variable de estado de autenticación ---
+        let isUserAdmin = false;
 
         // === Funciones para mostrar/ocultar UI ===
         function showAdminUI() {
+            isUserAdmin = true;
             adminLink.classList.remove('hidden');
             logoutBtn.classList.remove('hidden');
             adminLoginBtn.classList.add('hidden'); 
-            adminLink.addEventListener('click', openAdminModal);
+            // Apunta a la función de "Crear"
+            adminLink.addEventListener('click', openAdminModalForCreate);
         }
         function showVisitorUI() {
+            isUserAdmin = false;
             adminLink.classList.add('hidden');
             logoutBtn.classList.add('hidden');
             adminLoginBtn.classList.remove('hidden'); 
-            adminLink.removeEventListener('click', openAdminModal);
+            adminLink.removeEventListener('click', openAdminModalForCreate);
         }
         
         // --- Funciones del Modal de Login ---
-        function openLoginModal() {
-            loginModal.classList.remove('hidden');
-        }
+        function openLoginModal() { loginModal.classList.remove('hidden'); }
         function closeLoginModal() {
             loginModal.classList.add('hidden');
             loginError.classList.add('hidden'); 
             loginForm.reset(); 
         }
 
-        // --- Funciones del Modal de Admin (CRUD) ---
-        function openAdminModal(e) {
-            e.preventDefault(); 
+        // --- MODIFICADO: Funciones del Modal de Admin (CRUD) ---
+        
+        // Abre el modal para CREAR un nuevo diseño
+        function openAdminModalForCreate(e) {
+            if(e) e.preventDefault(); 
+            adminForm.reset(); // Limpia el formulario
+            editDocIdInput.value = ""; // Asegura que no haya ID
+            adminModalTitle.textContent = "Registrar Nuevo Diseño";
+            adminSubmitText.textContent = "Guardar Diseño";
             adminModal.classList.remove('hidden');
         }
+
+        // Abre el modal para EDITAR un diseño existente
+        function openAdminModalForEdit(docId, fileName, description) {
+            adminForm.reset();
+            editDocIdInput.value = docId; // Pone el ID en el campo oculto
+            adminModalTitle.textContent = "Editar Diseño";
+            adminSubmitText.textContent = "Actualizar Diseño";
+            
+            // Llena el formulario con los datos actuales
+            filenameInput.value = fileName;
+            descriptionInput.value = description;
+            
+            adminModal.classList.remove('hidden');
+        }
+
         function closeAdminModal() {
             adminModal.classList.add('hidden');
             adminError.classList.add('hidden');
             adminForm.reset();
+            editDocIdInput.value = ""; // Limpia el ID al cerrar
         }
         
         // --- Función para mostrar/ocultar spinner de carga ---
@@ -416,13 +479,14 @@
         // === Lógica de Autenticación (Login/Logout) ===
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                console.log("Usuario autenticado:", user.email);
                 showAdminUI();
             } else {
-                console.log("No hay usuario autenticado.");
                 showVisitorUI();
             }
+            // === IMPORTANTE: Carga los diseños DESPUÉS de saber el estado de auth ===
+            loadDesigns();
         });
+        
         adminLoginBtn.addEventListener('click', openLoginModal);
         closeModalBtn.addEventListener('click', closeLoginModal);
         loginModal.addEventListener('click', (e) => {
@@ -434,14 +498,9 @@
             const password = passwordInput.value;
             loginError.classList.add('hidden'); 
             signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    console.log("Login exitoso!", userCredential.user);
-                    closeLoginModal(); 
-                })
+                .then(() => closeLoginModal())
                 .catch((error) => {
-                    console.error("Error de login:", error.code);
-                    let mensaje = "Correo o contraseña incorrectos.";
-                    loginError.textContent = mensaje;
+                    loginError.textContent = "Correo o contraseña incorrectos.";
                     loginError.classList.remove('hidden');
                 });
         });
@@ -449,19 +508,47 @@
             signOut(auth).catch((error) => console.error("Error al cerrar sesión:", error));
         });
 
-        // === Lógica CRUD (Crear y Leer Diseños) ===
+        // === MODIFICADO: Lógica CRUD (Crear, Leer, Actualizar, Borrar) ===
+
+        // --- 1. LEER (Read) Diseños desde Firestore ---
         async function loadDesigns() {
             galleryGrid.innerHTML = ''; // Limpia la galería
             try {
                 const q = query(collection(db, "designs"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
+                
                 querySnapshot.forEach((doc) => {
                     const design = doc.data();
+                    const designId = doc.id;
+                    
                     const designElement = document.createElement('div');
+                    // Almacena los datos en el elemento para fácil acceso
                     designElement.className = 'gallery-item rounded-lg overflow-hidden';
+                    designElement.dataset.id = designId;
+                    designElement.dataset.filename = design.fileName;
+                    designElement.dataset.description = design.description || "";
+                    
+                    // --- Genera botones de admin si el usuario está logueado ---
+                    let adminButtonsHTML = '';
+                    if (isUserAdmin) {
+                        adminButtonsHTML = `
+                            <div class="admin-controls">
+                                <button class="admin-btn admin-btn-edit" aria-label="Editar">
+                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </button>
+                                <button class="admin-btn admin-btn-delete" aria-label="Eliminar">
+                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    // --- Usa object-contain para la imagen ---
                     designElement.innerHTML = `
-                        <img src="${design.fileName}" alt="${design.description || 'Diseño de uñas'}" class="w-full h-full object-cover">
+                        <img src="${design.fileName}" alt="${design.description || 'Diseño de uñas'}" class="w-full h-full object-contain">
+                        ${adminButtonsHTML}
                     `;
+                    
                     galleryGrid.appendChild(designElement);
                 });
             } catch (error) {
@@ -470,32 +557,50 @@
             }
         }
 
-        // --- 2. CREAR (Create) Nuevo Diseño ---
+        // --- 2. CREAR (Create) y ACTUALIZAR (Update) ---
         closeAdminModalBtn.addEventListener('click', closeAdminModal);
         adminModal.addEventListener('click', (e) => {
             if (e.target === adminModal) closeAdminModal();
         });
+        
         adminForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             adminError.classList.add('hidden');
+            
             const fileName = filenameInput.value;
             const description = descriptionInput.value;
+            const docIdToEdit = editDocIdInput.value; // Revisa si estamos editando
+            
             if (!fileName) { 
                 adminError.textContent = "Por favor, escribe el nombre del archivo.";
                 adminError.classList.remove('hidden');
                 return;
             }
+            
             setAdminLoading(true);
+
             try {
-                const docRef = await addDoc(collection(db, "designs"), {
+                const designData = {
                     fileName: fileName,
-                    description: description,
-                    createdAt: new Date() 
-                });
-                console.log("Documento guardado con ID: ", docRef.id);
+                    description: description
+                };
+
+                if (docIdToEdit) {
+                    // --- MODO UPDATE ---
+                    const docRef = doc(db, "designs", docIdToEdit);
+                    await updateDoc(docRef, designData); // No se actualiza 'createdAt'
+                    console.log("Documento actualizado!");
+                } else {
+                    // --- MODO CREATE ---
+                    designData.createdAt = new Date(); // Añade fecha de creación
+                    await addDoc(collection(db, "designs"), designData);
+                    console.log("Documento guardado!");
+                }
+                
                 setAdminLoading(false);
                 closeAdminModal();
-                loadDesigns(); 
+                loadDesigns(); // Recarga la galería
+                
             } catch (error) {
                 console.error("Error al guardar el diseño: ", error);
                 adminError.textContent = "Error al guardar. Intenta de nuevo.";
@@ -503,9 +608,37 @@
                 setAdminLoading(false);
             }
         });
+        
+        // --- 3. BORRAR (Delete) y EDITAR (Click Handlers) ---
+        
+        galleryGrid.addEventListener('click', async (e) => {
+            const editBtn = e.target.closest('.admin-btn-edit');
+            const deleteBtn = e.target.closest('.admin-btn-delete');
+            
+            if (editBtn) {
+                const item = editBtn.closest('.gallery-item');
+                const { id, filename, description } = item.dataset;
+                openAdminModalForEdit(id, filename, description);
+            }
+            
+            if (deleteBtn) {
+                const item = deleteBtn.closest('.gallery-item');
+                const { id, filename } = item.dataset;
+                
+                // Pedir confirmación
+                if (confirm(`¿Estás seguro de que quieres eliminar el diseño "${filename}"?`)) {
+                    try {
+                        await deleteDoc(doc(db, "designs", id));
+                        console.log("Documento eliminado!");
+                        loadDesigns(); // Recargar galería
+                    } catch (error) {
+                        console.error("Error al eliminar: ", error);
+                        alert("No se pudo eliminar el diseño.");
+                    }
+                }
+            }
+        });
 
-        // === Carga inicial de diseños al abrir la página ===
-        loadDesigns();
     </script>
 
 </body>
