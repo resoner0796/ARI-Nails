@@ -28,16 +28,23 @@
             z-index: 1;
         }
 
-        /* Textura de Gamuza (Suede Texture) */
+        /* * Textura de Gamuza (Suede Texture)
+         * Usamos un pseudo-elemento ::before para aplicar el fondo
+         * y el filtro de textura detrás de todo el contenido.
+         */
         body::before {
             content: '';
-            position: fixed; 
+            position: fixed; /* Fijo para que cubra toda la pantalla siempre */
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            z-index: -1; 
+            z-index: -1; /* Detrás del contenido */
+            
+            /* El mismo degradado de antes */
             background-image: radial-gradient(circle at center, #b93b6a 0%, #86193d 70%);
+            
+            /* Aplicamos el filtro SVG definido abajo */
             filter: url(#suede-texture);
         }
 
@@ -81,15 +88,14 @@
         }
 
         /* Overlay (fondo oscuro) */
-        .page-overlay { 
+        #overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(5px);
-            z-index: 30; 
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 30;
         }
-        .page-overlay.open {
+        #overlay.open {
             display: block;
         }
 
@@ -113,108 +119,9 @@
             box-shadow: 0 10px 20px rgba(209, 151, 136, 0.2); 
         }
 
-        /* --- Estilos para Modales --- */
-        .modal {
+        /* === NUEVO: Estilo para la clase 'hidden' de JS === */
+        .hidden {
             display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 50;
-            background-color: #fce7f3; /* Rosa pálido */
-            color: #86193d; /* Texto magenta */
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            width: 90%;
-            max-width: 500px;
-        }
-        .modal.open {
-            display: block;
-        }
-        .modal-header {
-            border-bottom: 1px solid #d19788;
-        }
-        .modal-close-btn {
-            transition: color 0.2s;
-        }
-        .modal-close-btn:hover {
-            color: #b93b6a;
-        }
-        .form-input {
-            background-color: #ffffff;
-            border: 2px solid #d19788;
-            color: #86193d;
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            width: 100%;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: #86193d;
-            box-shadow: 0 0 0 3px rgba(134, 25, 61, 0.3);
-        }
-        .form-label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-        .primary-btn {
-            background-color: #86193d;
-            color: #ffffff;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s;
-        }
-        .primary-btn:hover {
-            background-color: #b93b6a;
-        }
-
-        /* --- Loader --- */
-        #loader {
-            display: none; /* Oculto por defecto */
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50px;
-            height: 50px;
-            border: 5px solid #fce7f3;
-            border-top-color: #86193d;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            z-index: 100;
-        }
-        #loader.show {
-            display: block;
-        }
-        @keyframes spin {
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        /* --- Custom Alert --- */
-        #custom-alert {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 1rem 2rem;
-            border-radius: 0.5rem;
-            color: white;
-            font-weight: 600;
-            z-index: 101;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        #custom-alert.show {
-            display: block;
-        }
-        #custom-alert.success {
-            background-color: #22c55e; /* Verde */
-        }
-        #custom-alert.error {
-            background-color: #ef4444; /* Rojo */
         }
     </style>
 </head>
@@ -225,75 +132,67 @@
             <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch"/>
             <feGaussianBlur stdDeviation="0.4"/>
             <feColorMatrix type="matrix" values="0 0 0 0 0.86
-                                                0 0 0 0 0.1
-                                                0 0 0 0 0.23
-                                                0 0 0 0.1 0"/>
+                                                 0 0 0 0 0.1
+                                                 0 0 0 0 0.23
+                                                 0 0 0 0.1 0"/>
              <feComposite in="SourceGraphic" operator="in"/>
         </filter>
     </svg>
 
-    <div id="loader"></div>
-
-    <div id="custom-alert"></div>
-
-    <div id="global-overlay" class="page-overlay"></div>
+    <div id="overlay" class="fixed inset-0"></div>
     
     <div id="side-panel" class="fixed top-0 left-0 h-full w-64 md:w-80 shadow-2xl flex flex-col">
         <div class="flex-grow p-4">
             
-            <div class="mb-6 mt-12 flex justify-center">
-                <img src="arilogo.PNG" alt="ARI Nails Logo" class="w-auto" style="height: 85px;">
+            <div class="mb-6 mt-12 flex justify-center"> <img src="image.png" alt="ARI Nails Logo" class="w-auto" style="height: 85px;">
             </div>
 
             <nav>
                 <a href="#" class="panel-button">Ver todos los diseños</a>
                 <a href="#" class="panel-button">Agendar una Cita</a>
-                <a href="#" id="admin-catalog-btn" class="panel-button hidden">Catálogo de diseños</a>
+                <a href="#" id="admin-link" class="panel-button hidden">Administrar Diseños</a>
             </nav>
         </div>
         
         <div class="p-4 border-t border-pink-700">
+            <button id="logout-btn" class="panel-button hidden mb-4 text-center w-full">
+                Cerrar Sesión
+            </button>
+            
             <div class="flex justify-center space-x-4">
                 <a href="#" class="social-button h-12 w-12 rounded-full flex items-center justify-center" aria-label="Facebook">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" /></svg>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" />
+                    </svg>
                 </a>
                 <a href="#" class="social-button h-12 w-12 rounded-full flex items-center justify-center" aria-label="WhatsApp">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 2.0C6.58 2.0 2.13 6.45 2.13 11.9c0 1.76.45 3.42 1.25 4.88L2.0 22.0l5.32-1.38c1.4.74 2.98 1.18 4.7 1.18h.01c5.45 0 9.9-4.45 9.9-9.9c0-5.45-4.45-9.9-9.9-9.9zM17.22 15.26c-.18-.32-.67-.53-1.02-.62c-.35-.1-2.07-.98-2.39-1.1c-.32-.12-.55-.18-.78.18c-.23.36-.9.9-1.11 1.08c-.2.18-.4.2-.62.06c-.23-.12-1.3-.48-2.47-1.5c-.92-.8-1.54-1.78-1.73-2.08c-.18-.3-.01-.46.1-.6c.1-.12.23-.3.34-.45c.12-.15.18-.23.26-.38c.08-.15.04-.28 0-.38c-.04-.1-.78-1.88-1.07-2.58c-.28-.7-.56-.6-.78-.6c-.2-.01-.45-.01-.7-.01c-.25 0-.64.09-.98.45c-.34.36-1.3.9-1.3 2.8c0 1.9 1.33 3.6 1.52 3.85c.18.23 2.6 4.1 6.3 5.5c.88.3 1.5.5 2.1.6c.7.1 1.3.1 1.8-.05c.6-.1 2.07-.8 2.37-1.5c.3-.7.3-1.3.2-1.5c-.08-.2-.3-.3-.48-.5z" /></svg>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12.031 2.0C6.58 2.0 2.13 6.45 2.13 11.9c0 1.76.45 3.42 1.25 4.88L2.0 22.0l5.32-1.38c1.4.74 2.98 1.18 4.7 1.18h.01c5.45 0 9.9-4.45 9.9-9.9c0-5.45-4.45-9.9-9.9-9.9zM17.22 15.26c-.18-.32-.67-.53-1.02-.62c-.35-.1-2.07-.98-2.39-1.1c-.32-.12-.55-.18-.78.18c-.23.36-.9.9-1.11 1.08c-.2.18-.4.2-.62.06c-.23-.12-1.3-.48-2.47-1.5c-.92-.8-1.54-1.78-1.73-2.08c-.18-.3-.01-.46.1-.6c.1-.12.23-.3.34-.45c.12-.15.18-.23.26-.38c.08-.15.04-.28 0-.38c-.04-.1-.78-1.88-1.07-2.58c-.28-.7-.56-.6-.78-.6c-.2-.01-.45-.01-.7-.01c-.25 0-.64.09-.98.45c-.34.36-1.3.9-1.3 2.8c0 1.9 1.33 3.6 1.52 3.85c.18.23 2.6 4.1 6.3 5.5c.88.3 1.5.5 2.1.6c.7.1 1.3.1 1.8-.05c.6-.1 2.07-.8 2.37-1.5c.3-.7.3-1.3.2-1.5c-.08-.2-.3-.3-.48-.5z" />
+                    </svg>
                 </a>
             </div>
         </div>
     </div>
 
-    <div id="login-modal" class="modal">
-        <div class="modal-header p-4 flex justify-between items-center">
-            <h2 class="text-2xl font-bold font-cursive">Admin Login</h2>
-            <button id="close-login-modal" class="modal-close-btn text-2xl">&times;</button>
-        </div>
-        <div class="p-6">
-            <form id="login-form">
-                <div class="mb-4">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" class="form-input" required>
-                </div>
-                <div class="mb-6">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" id="password" class="form-input" required>
-                </div>
-                <button type="submit" class="primary-btn w-full">Iniciar Sesión</button>
-            </form>
-        </div>
-    </div>
-
     <div class="relative min-h-screen">
         <header class="sticky top-0 z-20 w-full p-4">
-            <div class="flex items-center justify-between max-w-6xl mx-auto h-16">
-                <button id="menu-btn" class="p-2 rounded-md hover:bg-pink-700 transition-colors z-10" aria-label="Abrir menú">
-                    <svg class="w-6 h-6 text-white" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <div class="relative flex items-center justify-between max-w-6xl mx-auto h-16">
+                <button id="menu-btn" class="p-2 rounded-md hover:bg-pink-700 transition-colors" aria-label="Abrir menú">
+                    <svg class="w-6 h-6 text-white" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
                 </button>
 
                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <img src="arilogo.PNG" alt="ARI Nails Logo" class="h-16 w-auto" style="max-height: 100px;">
-                    <button id="admin-login-trigger" class="absolute inset-0 w-full h-full bg-transparent z-20" aria-label="Abrir login de administrador"></button>
+                    <img src="image.png" alt="ARI Nails Logo" class="h-16 w-auto" style="max-height: 100px;">
+                </div>
+                
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+                    <button id="admin-login-btn" class="w-16 h-16 rounded-full flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-50 transition-all opacity-70 hover:opacity-100" aria-label="Admin Login">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </button>
                 </div>
                 
                 <div class="w-8 h-8"></div> </div>
@@ -304,242 +203,240 @@
                 Galería de Diseños
             </h1>
 
-            <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 max-w-6xl mx-auto">
+                
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+1" alt="Diseño de uñas 1" class="w-full h-full object-cover">
                 </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+2" alt="Diseño de uñas 2" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+3" alt="Diseño de uñas 3" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+4" alt="Diseño de uñas 4" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+5" alt="Diseño de uñas 5" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+6" alt="Diseño de uñas 6" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+7" alt="Diseño de uñas 7" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+8" alt="Diseño de uñas 8" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+9" alt="Diseño de uñas 9" class="w-full h-full object-cover">
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden">
+                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+10" alt="Diseño de uñas 10" class="w-full h-full object-cover">
+                </div>
+
+            </div>
         </main>
     </div>
 
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+        <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8 w-full max-w-sm relative" style="color: #86193d;">
+            <button id="close-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-bold text-center mb-6 font-cursive">Iniciar Sesión</h2>
+            
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="email-input" class="block text-sm font-semibold mb-2">Correo Electrónico</label>
+                    <input type="email" id="email-input" class_=""
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                           required>
+                </div>
+                <div class="mb-6">
+                    <label for="password-input" class="block text-sm font-semibold mb-2">Contraseña</label>
+                    <input type="password" id="password-input"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                           required>
+                </div>
+                
+                <div id="login-error" class="text-red-600 text-sm text-center mb-4 hidden"></div>
+
+                <button type="submit" class="w-full bg-pink-600 text-white py-2 rounded-md font-bold hover:bg-pink-700 transition-colors">
+                    Entrar
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuBtn = document.getElementById('menu-btn');
+            const sidePanel = document.getElementById('side-panel');
+            const overlay = document.getElementById('overlay');
+
+            function togglePanel() {
+                sidePanel.classList.toggle('open');
+                overlay.classList.toggle('open');
+                
+                if (sidePanel.classList.contains('open')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = 'auto';
+                }
+            }
+
+            menuBtn.addEventListener('click', togglePanel);
+            overlay.addEventListener('click', togglePanel);
+            
+            // === MODIFICADO: Añadimos un listener para cerrar el panel si hacemos clic en un enlace ===
+            // Esto es útil si el 'logout-btn' o 'admin-link' son clickeados
+            sidePanel.addEventListener('click', (e) => {
+                // Si se hizo clic en un botón o enlace, cerramos el panel
+                if (e.target.closest('a') || e.target.closest('button')) {
+                    // No cerramos si es un botón de redes sociales
+                    if (!e.target.closest('.social-button')) {
+                        togglePanel();
+                    }
+                }
+            });
+        });
+    </script>
 
     <script type="module">
-        // Importar funciones de Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // Importar funciones de Firebase desde la CDN (como módulos)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { 
             getAuth, 
             signInWithEmailAndPassword, 
-            onAuthStateChanged,
-            signInAnonymously,
-            signInWithCustomToken,
-            setLogLevel
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            onSnapshot, // Solo necesitamos leer
-            query
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+            signOut, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-        // --- Configuración de Firebase (Usando variables de entorno) ---
-        let app, auth, db, currentUserId, designsUnsubscribe;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        try {
-            const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-            const firebaseConfig = JSON.parse(firebaseConfigStr);
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyDip9cNWnSXTKYzBy95zDom8SVfbjdC-68",
+          authDomain: "chepinas-burguer.firebaseapp.com",
+          projectId: "chepinas-burguer",
+          storageBucket: "chepinas-burguer.firebasestorage.app",
+          messagingSenderId: "233011732997",
+          appId: "1:233011732997:web:5039e5a9707beed914726c"
+        };
 
-            if (firebaseConfig.apiKey) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                setLogLevel('Debug'); 
-                console.log("Firebase inicializado correctamente.");
-            } else {
-                console.error("Configuración de Firebase no encontrada o inválida.");
-                showAlert("Error: No se pudo conectar a la base de datos.", true);
-            }
-        } catch (error) {
-            console.error("Error inicializando Firebase:", error);
-            showAlert("Error crítico de inicialización.", true);
-        }
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
-        // --- Path de la Colección de Firestore ---
-        const designsColPath = `artifacts/${appId}/public/data/nailDesigns`;
-        const designsColRef = collection(db, designsColPath);
-
-        // --- Selectores del DOM ---
-        const menuBtn = document.getElementById('menu-btn');
-        const sidePanel = document.getElementById('side-panel');
-        const globalOverlay = document.getElementById('global-overlay'); 
-        const loader = document.getElementById('loader');
-        const alertBox = document.getElementById('custom-alert');
-
-        // Modales
+        // === Referencias a elementos del DOM ===
+        const adminLoginBtn = document.getElementById('admin-login-btn');
         const loginModal = document.getElementById('login-modal');
-        
-        // Botones de Cierre de Modales
-        const closeLoginModalBtn = document.getElementById('close-login-modal');
-
-        // Triggers
-        const adminLoginTrigger = document.getElementById('admin-login-trigger');
-        const adminCatalogBtn = document.getElementById('admin-catalog-btn'); // Aún lo necesitamos para mostrar/ocultar
-
-        // Forms
+        const closeModalBtn = document.getElementById('close-modal-btn');
         const loginForm = document.getElementById('login-form');
+        const emailInput = document.getElementById('email-input');
+        const passwordInput = document.getElementById('password-input');
+        const loginError = document.getElementById('login-error');
+        
+        const adminLink = document.getElementById('admin-link');
+        const logoutBtn = document.getElementById('logout-btn');
 
-        // Contenedores Dinámicos
-        const galleryGrid = document.getElementById('gallery-grid');
+        // === Funciones para mostrar/ocultar UI ===
         
-        // --- Funciones de Utilidad ---
-        
-        function showLoader() { loader.classList.add('show'); }
-        function hideLoader() { loader.classList.remove('show'); }
-
-        function showAlert(message, isError = false) {
-            alertBox.textContent = message;
-            alertBox.className = isError ? 'error' : 'success';
-            alertBox.classList.add('show');
-            setTimeout(() => {
-                alertBox.classList.remove('show');
-            }, 3000);
-        }
-        
-        function openModal(modal) {
-            if (sidePanel.classList.contains('open')) {
-                sidePanel.classList.remove('open');
-            }
-            modal.classList.add('open');
-            globalOverlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
+        // Muestra UI de Admin (sesión iniciada)
+        function showAdminUI() {
+            adminLink.classList.remove('hidden');
+            logoutBtn.classList.remove('hidden');
+            adminLoginBtn.classList.add('hidden'); // Oculta el botón del candado
         }
 
-        function closeModal(modal) {
-            modal.classList.remove('open');
-            if (!document.querySelector('.modal.open') && !sidePanel.classList.contains('open')) {
-                globalOverlay.classList.remove('open');
-                document.body.style.overflow = 'auto';
-            }
+        // Muestra UI de Visitante (sesión cerrada)
+        function showVisitorUI() {
+            adminLink.classList.add('hidden');
+            logoutBtn.classList.add('hidden');
+            adminLoginBtn.classList.remove('hidden'); // Muestra el botón del candado
+        }
+        
+        // Abrir/Cerrar Modal
+        function openModal() {
+            loginModal.classList.remove('hidden');
+        }
+        function closeModal() {
+            loginModal.classList.add('hidden');
+            loginError.classList.add('hidden'); // Oculta errores al cerrar
+            loginForm.reset(); // Limpia el formulario
         }
 
-        // --- Lógica del Panel Lateral ---
-        function togglePanel() {
-            if (document.querySelector('.modal.open')) {
-                document.querySelector('.modal.open').classList.remove('open');
-            }
-            sidePanel.classList.toggle('open');
-            globalOverlay.classList.toggle('open');
-            document.body.style.overflow = sidePanel.classList.contains('open') ? 'hidden' : 'auto';
-        }
+        // === Lógica de Autenticación ===
 
-        menuBtn.addEventListener('click', togglePanel);
-        
-        globalOverlay.addEventListener('click', () => {
-            if (sidePanel.classList.contains('open')) {
-                togglePanel();
-            }
-            document.querySelectorAll('.modal.open').forEach(modal => {
-                modal.classList.remove('open');
-            });
-            if (!document.querySelector('.modal.open') && !sidePanel.classList.contains('open')) {
-                globalOverlay.classList.remove('open');
-                document.body.style.overflow = 'auto';
-            }
-        });
-
-        // --- Lógica de Modales ---
-        adminLoginTrigger.addEventListener('click', () => openModal(loginModal));
-        closeLoginModalBtn.addEventListener('click', () => closeModal(loginModal));
-        
-        // El listener para adminCatalogBtn ha sido removido
-        
-        // --- Lógica de Autenticación ---
+        // 1. Escuchar cambios de estado (Maneja si estás logueado o no al cargar la pág)
         onAuthStateChanged(auth, (user) => {
-            if (user && !user.isAnonymous) {
-                console.log("Admin logueado:", user.uid);
-                currentUserId = user.uid;
-                adminCatalogBtn.classList.remove('hidden'); // Solo muestra el botón
+            if (user) {
+                // El usuario está logueado
+                console.log("Usuario autenticado:", user.email);
+                showAdminUI();
             } else {
-                console.log("Usuario anónimo o deslogueado.");
-                currentUserId = user ? user.uid : null;
-                adminCatalogBtn.classList.add('hidden'); // Oculta el botón
+                // El usuario no está logueado
+                console.log("No hay usuario autenticado.");
+                showVisitorUI();
             }
-            loadDesigns(); // Carga los diseños independientemente de quién sea
         });
 
-        (async () => {
-            if (auth) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                        console.log("Logueado con Custom Token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Logueado anónimamente.");
+        // 2. Abrir el modal de login
+        adminLoginBtn.addEventListener('click', openModal);
+        
+        // 3. Cerrar el modal
+        closeModalBtn.addEventListener('click', closeModal);
+        // Opcional: Cerrar si se hace clic fuera del modal
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                closeModal();
+            }
+        });
+
+        // 4. Manejar el envío del formulario de login
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Evita que la página se recargue
+            
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            
+            loginError.classList.add('hidden'); // Oculta error previo
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // Login exitoso
+                    console.log("Login exitoso!", userCredential.user);
+                    closeModal(); // Cierra el modal
+                    // onAuthStateChanged se encargará de mostrar la UI de admin
+                })
+                .catch((error) => {
+                    // Manejo de errores
+                    console.error("Error de login:", error.code, error.message);
+                    let_mensaje = "Error al iniciar sesión. Verifica tus datos.";
+                    if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                        mensaje = "Correo o contraseña incorrectos.";
                     }
-                } catch (error) {
-                    console.error("Error en inicio de sesión inicial:", error);
-                    showAlert("Error de autenticación", true);
-                }
-            }
-        })();
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = loginForm.email.value;
-            const password = loginForm.password.value;
-            showLoader();
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                closeModal(loginModal);
-                showAlert('Inicio de sesión exitoso');
-            } catch (error) {
-                console.error("Error al iniciar sesión:", error);
-                showAlert(`Error: ${error.code}`, true);
-            } finally {
-                hideLoader();
-                loginForm.reset();
-            }
+                    loginError.textContent = mensaje;
+                    loginError.classList.remove('hidden');
+                });
         });
 
-        // --- Lógica de Firestore (SOLO LECTURA) ---
-
-        // 1. Cargar y Escuchar Diseños (Read)
-        function loadDesigns() {
-            if (!db) return;
-            showLoader();
-            
-            if (designsUnsubscribe) {
-                designsUnsubscribe();
-            }
-
-            const q = query(designsColRef);
-            designsUnsubscribe = onSnapshot(q, (snapshot) => {
-                galleryGrid.innerHTML = ''; // Limpia la galería
-                
-                if (snapshot.empty) {
-                    console.log("No hay diseños en la base de datos.");
-                    galleryGrid.innerHTML = '<p class="text-white col-span-full text-center">Aún no hay diseños para mostrar.</p>';
-                }
-
-                snapshot.forEach(doc => {
-                    const design = doc.data();
-                    const designId = doc.id;
-                    
-                    // Solo renderizamos en la galería pública
-                    renderDesignToGallery(design, designId);
+        // 5. Manejar el clic de "Cerrar Sesión"
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth)
+                .then(() => {
+                    // Cierre de sesión exitoso
+                    console.log("Sesión cerrada.");
+                    // onAuthStateChanged se encargará de mostrar la UI de visitante
+                })
+                .catch((error) => {
+                    console.error("Error al cerrar sesión:", error);
                 });
-                hideLoader();
-            }, (error) => {
-                console.error("Error al cargar diseños:", error);
-                showAlert("Error al cargar diseños", true);
-                hideLoader();
-            });
-        }
-
-        // 2. Renderizar en la Galería (Helper)
-        function renderDesignToGallery(design, id) {
-            const item = document.createElement('div');
-            item.className = 'gallery-item rounded-lg overflow-hidden';
-            
-            const placeholderImg = `https://placehold.co/300x300/fce7f3/86193d?text=Imagen+No+Encontrada`;
-            const imageSrc = design.imagePath ? design.imagePath : placeholderImg;
-            
-            item.innerHTML = `
-                <img src="${imageSrc}" alt="${design.description || 'Diseño de uñas'}" class="w-full h-full object-cover" 
-                     onerror="this.src='${placeholderImg}'; this.onerror=null;">
-            `;
-            galleryGrid.appendChild(item);
-        }
-
-        // --- Funciones de CRUD (add, update, delete) han sido eliminadas ---
+        });
 
     </script>
 
