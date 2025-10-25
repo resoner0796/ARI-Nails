@@ -144,7 +144,8 @@
     <div id="side-panel" class="fixed top-0 left-0 h-full w-64 md:w-80 shadow-2xl flex flex-col">
         <div class="flex-grow p-4">
             
-            <div class="mb-6 mt-12 flex justify-center"> <img src="arilogo.PNG" alt="ARI Nails Logo" class="w-auto" style="height: 85px;">
+            <div class="mb-6 mt-12 flex justify-center">
+                <img src="arilogo.PNG" alt="ARI Nails Logo" class="w-auto" style="height: 150px;">
             </div>
 
             <nav>
@@ -175,8 +176,9 @@
     </div>
 
     <div class="relative min-h-screen">
+        
         <header class="sticky top-0 z-20 w-full p-4">
-            <div class="relative flex items-center justify-between max-w-6xl mx-auto h-16">
+            <div class="relative flex items-center justify-between max-w-6xl mx-auto h-44">
                 <button id="menu-btn" class="p-2 rounded-md hover:bg-pink-700 transition-colors" aria-label="Abrir menú">
                     <svg class="w-6 h-6 text-white" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" />
@@ -184,21 +186,17 @@
                 </button>
 
                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <img src="arilogo.PNG" alt="ARI Nails Logo" class="h-16 w-auto" style="max-height: 100px;">
+                    <img src="arilogo.PNG" alt="ARI Nails Logo" class="w-auto" style="height: 150px;">
                 </div>
                 
                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-                    <button id="admin-login-btn" class="w-16 h-16 rounded-full flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-50 transition-all opacity-70 hover:opacity-100" aria-label="Admin Login">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
-                    </button>
+                    <button id="admin-login-btn" class="cursor-pointer" style="width: 150px; height: 150px;" aria-label="Admin Login"></button>
                 </div>
                 
                 <div class="w-8 h-8"></div> </div>
         </header>
 
-        <main class="p-4 md:p-8 pt-20"> 
+        <main class="p-4 md:p-8 pt-48"> 
             <h1 class="text-5xl md:text-6xl font-bold text-center mb-8 text-white font-cursive" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                 Galería de Diseños
             </h1>
@@ -230,7 +228,7 @@
                     <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+8" alt="Diseño de uñas 8" class="w-full h-full object-cover">
                 </div>
                 <div class="gallery-item rounded-lg overflow-hidden">
-                    <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+9" alt="Diseño de uñas 9" class="w-full h-full object-cover">
+                    <img src="httpsD/300x300/fce7f3/86193d?text=Dise%C3%B1o+9" alt="Diseño de uñas 9" class="w-full h-full object-cover">
                 </div>
                 <div class="gallery-item rounded-lg overflow-hidden">
                     <img src="https://placehold.co/300x300/fce7f3/86193d?text=Dise%C3%B1o+10" alt="Diseño de uñas 10" class="w-full h-full object-cover">
@@ -350,14 +348,14 @@
         function showAdminUI() {
             adminLink.classList.remove('hidden');
             logoutBtn.classList.remove('hidden');
-            adminLoginBtn.classList.add('hidden'); // Oculta el botón del candado
+            adminLoginBtn.classList.add('hidden'); // Oculta el botón secreto (ya no es necesario)
         }
 
         // Muestra UI de Visitante (sesión cerrada)
         function showVisitorUI() {
             adminLink.classList.add('hidden');
             logoutBtn.classList.add('hidden');
-            adminLoginBtn.classList.remove('hidden'); // Muestra el botón del candado
+            adminLoginBtn.classList.remove('hidden'); // Muestra el botón secreto
         }
         
         // Abrir/Cerrar Modal
@@ -416,7 +414,7 @@
                 .catch((error) => {
                     // Manejo de errores
                     console.error("Error de login:", error.code, error.message);
-                    let_mensaje = "Error al iniciar sesión. Verifica tus datos.";
+                    let mensaje = "Error al iniciar sesión. Verifica tus datos.";
                     if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
                         mensaje = "Correo o contraseña incorrectos.";
                     }
