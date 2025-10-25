@@ -347,7 +347,8 @@
         
         <div class="p-6 border-b border-d19788">
             <form id="crud-form">
-                <input type="hidden" id="docId"> <div class="mb-4">
+                <input type="hidden" id="docId">
+                <div class="mb-4">
                     <label for="imagePath" class="form-label">Nombre del Archivo (ej. diseño1.png)</label>
                     <input type="text" id="imagePath" class="form-input" required placeholder="ej. diseño_rojo.png">
                 </div>
@@ -738,6 +739,8 @@
                 crudForm.docId.value = target.dataset.id;
                 crudForm.imagePath.value = target.dataset.path;
                 crudForm.description.value = target.dataset.desc;
+                // No es necesario cerrar el modal, ya está abierto, solo re-abrimos el de CRUD
+                closeModal(crudModal); // Cierra por si acaso (aunque no debería estar)
                 openModal(crudModal); // Re-abre el modal para editar
             }
 
