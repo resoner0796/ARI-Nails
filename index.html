@@ -54,11 +54,11 @@
             transform: translateX(0);
         }
 
-        /* Botones del panel con relieve */
+        /* === MODIFICADO: Botones del panel en una línea === */
         .panel-button {
             display: block;
             width: 100%;
-            padding: 0.75rem 1.5rem; 
+            padding: 0.75rem 1rem; /* Reducido el padding horizontal (antes 1.5rem) */
             margin-bottom: 0.75rem; 
             text-align: left;
             font-weight: 600;
@@ -68,6 +68,11 @@
             background-color: #b93b6a; 
             border: 1px solid #d19788; 
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0,0,0,0.1); 
+            
+            /* Nuevas propiedades para una sola línea */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .panel-button:hover {
             background-color: #fce7f3; 
@@ -188,8 +193,8 @@
 
     <div class="relative min-h-screen">
         
-        <header class="sticky top-0 z-20 w-full p-4">
-            <div class="relative flex items-center justify-between max-w-6xl mx-auto h-32">
+        <header class="sticky top-0 z-20 w-full">
+            <div class="relative flex items-center justify-between max-w-6xl mx-auto h-36 p-4">
                 <button id="menu-btn" class="p-2 rounded-md hover:bg-pink-700 transition-colors" aria-label="Abrir menú">
                     <svg class="w-6 h-6 text-white" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" />
@@ -207,7 +212,7 @@
                 <div class="w-8 h-8"></div> </div>
         </header>
 
-        <main class="p-4 md:p-8 pt-32"> 
+        <main class="p-4 md:p-8 pt-36"> 
             <h1 class="text-5xl md:text-6xl font-bold text-center mb-8 text-white font-cursive" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                 Galería de Diseños
             </h1>
@@ -256,16 +261,13 @@
                            placeholder="Ej: modelo1.png"
                            required>
                 </div>
-                
                 <div class="mb-6">
                     <label for="description-input" class="block text-sm font-semibold mb-2">Descripción (Opcional)</label>
                     <textarea id="description-input" rows="3"
                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
                               placeholder="Ej: Uñas acrílicas con efecto espejo..."></textarea>
                 </div>
-                
                 <div id="admin-error" class="text-red-600 text-sm text-center mb-4 hidden"></div>
-
                 <button type="submit" id="admin-submit-btn" class="w-full bg-pink-600 text-white py-2 rounded-md font-bold hover:bg-pink-700 transition-colors flex items-center justify-center">
                     <span id="admin-submit-text">Guardar Diseño</span>
                     <div id="admin-spinner" class="spinner hidden"></div>
@@ -314,7 +316,6 @@
             signOut, 
             onAuthStateChanged 
         } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        // === MODIFICADO: Imports de Firestore (Storage eliminado) ===
         import { 
             getFirestore, 
             collection, 
@@ -324,8 +325,6 @@
             orderBy
         } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         
-        // (Storage ya no se importa)
-
         // Tu configuración de Firebase
         const firebaseConfig = {
           apiKey: "AIzaSyDip9cNWnSXTKYzBy95zDom8SVfbjdC-68",
@@ -339,9 +338,7 @@
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        // === MODIFICADO: Inicializar Firestore (Storage eliminado) ===
         const db = getFirestore(app);
-        // const storage = getStorage(app); // <--- ELIMINADO
 
         // === Referencias a elementos del DOM (Login) ===
         const adminLoginBtn = document.getElementById('admin-login-btn');
@@ -356,12 +353,11 @@
         const adminLink = document.getElementById('admin-link');
         const logoutBtn = document.getElementById('logout-btn');
 
-        // === MODIFICADO: Referencias a elementos (Admin CRUD) ===
+        // === Referencias a elementos (Admin CRUD) ===
         const adminModal = document.getElementById('admin-modal');
         const closeAdminModalBtn = document.getElementById('close-admin-modal-btn');
         const adminForm = document.getElementById('admin-form');
-        // const imageUpload = document.getElementById('image-upload'); // <--- ELIMINADO
-        const filenameInput = document.getElementById('filename-input'); // <--- NUEVO
+        const filenameInput = document.getElementById('filename-input'); 
         const descriptionInput = document.getElementById('description-input');
         const adminError = document.getElementById('admin-error');
         const adminSubmitBtn = document.getElementById('admin-submit-btn');
@@ -369,16 +365,13 @@
         const adminSpinner = document.getElementById('admin-spinner');
         const galleryGrid = document.getElementById('gallery-grid');
 
-
         // === Funciones para mostrar/ocultar UI ===
-        
         function showAdminUI() {
             adminLink.classList.remove('hidden');
             logoutBtn.classList.remove('hidden');
             adminLoginBtn.classList.add('hidden'); 
             adminLink.addEventListener('click', openAdminModal);
         }
-
         function showVisitorUI() {
             adminLink.classList.add('hidden');
             logoutBtn.classList.add('hidden');
@@ -420,8 +413,7 @@
             }
         }
 
-        // === Lógica de Autenticación (Login/Logout) (Sin cambios) ===
-
+        // === Lógica de Autenticación (Login/Logout) ===
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 console.log("Usuario autenticado:", user.email);
@@ -431,19 +423,16 @@
                 showVisitorUI();
             }
         });
-
         adminLoginBtn.addEventListener('click', openLoginModal);
         closeModalBtn.addEventListener('click', closeLoginModal);
         loginModal.addEventListener('click', (e) => {
             if (e.target === loginModal) closeLoginModal();
         });
-
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault(); 
             const email = emailInput.value;
             const password = passwordInput.value;
             loginError.classList.add('hidden'); 
-
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     console.log("Login exitoso!", userCredential.user);
@@ -456,34 +445,25 @@
                     loginError.classList.remove('hidden');
                 });
         });
-
         logoutBtn.addEventListener('click', () => {
             signOut(auth).catch((error) => console.error("Error al cerrar sesión:", error));
         });
 
-        // === MODIFICADO: Lógica CRUD (Crear y Leer Diseños) ===
-
-        // --- 1. LEER (Read) Diseños desde Firestore ---
+        // === Lógica CRUD (Crear y Leer Diseños) ===
         async function loadDesigns() {
             galleryGrid.innerHTML = ''; // Limpia la galería
-            
             try {
                 const q = query(collection(db, "designs"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
-                
                 querySnapshot.forEach((doc) => {
                     const design = doc.data();
                     const designElement = document.createElement('div');
                     designElement.className = 'gallery-item rounded-lg overflow-hidden';
-                    
-                    // === CAMBIO: Usa 'design.fileName' como 'src' ===
                     designElement.innerHTML = `
                         <img src="${design.fileName}" alt="${design.description || 'Diseño de uñas'}" class="w-full h-full object-cover">
                     `;
-                    
                     galleryGrid.appendChild(designElement);
                 });
-                
             } catch (error) {
                 console.error("Error al cargar diseños: ", error);
                 galleryGrid.innerHTML = '<p class="text-white col-span-full text-center">Error al cargar diseños.</p>';
@@ -491,47 +471,31 @@
         }
 
         // --- 2. CREAR (Create) Nuevo Diseño ---
-        
-        // Listeners del modal de admin
         closeAdminModalBtn.addEventListener('click', closeAdminModal);
         adminModal.addEventListener('click', (e) => {
             if (e.target === adminModal) closeAdminModal();
         });
-
-        // Handler del formulario de admin
         adminForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             adminError.classList.add('hidden');
-            
-            // === CAMBIO: Obtiene 'fileName' del input de texto ===
             const fileName = filenameInput.value;
             const description = descriptionInput.value;
-
-            if (!fileName) { // Valida que el campo no esté vacío
+            if (!fileName) { 
                 adminError.textContent = "Por favor, escribe el nombre del archivo.";
                 adminError.classList.remove('hidden');
                 return;
             }
-
             setAdminLoading(true);
-
             try {
-                // === CAMBIO: Lógica de Storage eliminada ===
-                // (No se sube imagen, solo se guarda el metadata)
-
-                // 1. Guardar datos en Firestore
                 const docRef = await addDoc(collection(db, "designs"), {
                     fileName: fileName,
                     description: description,
-                    createdAt: new Date() // Para ordenar
+                    createdAt: new Date() 
                 });
                 console.log("Documento guardado con ID: ", docRef.id);
-
-                // 2. Limpiar y recargar
                 setAdminLoading(false);
                 closeAdminModal();
-                loadDesigns(); // Recarga la galería con el nuevo diseño
-
+                loadDesigns(); 
             } catch (error) {
                 console.error("Error al guardar el diseño: ", error);
                 adminError.textContent = "Error al guardar. Intenta de nuevo.";
@@ -540,10 +504,8 @@
             }
         });
 
-
         // === Carga inicial de diseños al abrir la página ===
         loadDesigns();
-
     </script>
 
 </body>
