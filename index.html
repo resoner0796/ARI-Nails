@@ -113,7 +113,7 @@
             border-bottom: 1px solid #b93b6a; 
         }
         
-        /* === MODIFICADO: Estructura de Tarjeta de Galería === */
+        /* Estructura de Tarjeta de Galería */
         
         /* 1. El item del grid: la "tarjeta" completa (imagen + texto) */
         .gallery-card {
@@ -247,7 +247,7 @@
     <div class="relative min-h-screen">
         
         <header class="sticky top-0 z-20 w-full">
-            <div class="relative flex items-center justify-between max-w-6xl mx-auto h-36 p-4">
+            <div class="relative flex items-center justify-between max-w-6xl mx-auto h-32 p-2">
                 <button id="menu-btn" class="p-2 rounded-md hover:bg-pink-700 transition-colors" aria-label="Abrir menú">
                     <svg class="w-6 h-6 text-white" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16" />
@@ -265,7 +265,7 @@
                 <div class="w-8 h-8"></div> </div>
         </header>
 
-        <main class="p-4 md:p-8 pt-36"> 
+        <main class="p-4 md:p-8 pt-32"> 
             <h1 class="text-5xl md:text-6xl font-bold text-center mb-8 text-white font-cursive" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                 Galería de Diseños
             </h1>
@@ -303,9 +303,7 @@
             <button id="close-admin-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
-
             <h2 id="admin-modal-title" class="text-2xl font-bold text-center mb-6 font-cursive"></h2>
-            
             <form id="admin-form">
                 <input type="hidden" id="edit-doc-id">
                 <div class="mb-4">
@@ -322,7 +320,6 @@
                               placeholder="Ej: Uñas acrílicas con efecto espejo..."></textarea>
                 </div>
                 <div id="admin-error" class="text-red-600 text-sm text-center mb-4 hidden"></div>
-                
                 <button type="submit" id="admin-submit-btn" class="w-full bg-pink-600 text-white py-2 rounded-md font-bold hover:bg-pink-700 transition-colors flex items-center justify-center">
                     <span id="admin-submit-text"></span>
                     <div id="admin-spinner" class="spinner hidden"></div>
@@ -521,7 +518,7 @@
             signOut(auth).catch((error) => console.error("Error al cerrar sesión:", error));
         });
 
-        // === MODIFICADO: Lógica CRUD (Crear, Leer, Actualizar, Borrar) ===
+        // === Lógica CRUD (Crear, Leer, Actualizar, Borrar) ===
 
         // --- 1. LEER (Read) Diseños desde Firestore ---
         async function loadDesigns() {
@@ -549,6 +546,9 @@
                                 ${design.description}
                             </div>
                         `;
+                    } else {
+                        // Agrega espacio aunque esté vacío para alinear el grid
+                        descriptionHTML = `<div class="gallery-description"></div>`;
                     }
                     
                     // --- 3. Genera botones de admin (si es admin) ---
@@ -567,7 +567,6 @@
                     }
 
                     // --- 4. Ensambla el HTML de la tarjeta ---
-                    // CORRECCIÓN DE RUTA: Añadido "./" al src
                     cardElement.innerHTML = `
                         <div class="gallery-item">
                             <img src="./${design.fileName}" alt="${design.description || 'Diseño de uñas'}" class="w-full h-full object-contain">
@@ -633,19 +632,18 @@
         });
         
         // --- 3. BORRAR (Delete) y EDITAR (Click Handlers) ---
-        // MODIFICADO: Escucha por '.gallery-card'
         galleryGrid.addEventListener('click', async (e) => {
             const editBtn = e.target.closest('.admin-btn-edit');
             const deleteBtn = e.target.closest('.admin-btn-delete');
             
             if (editBtn) {
-                const item = editBtn.closest('.gallery-card'); // <-- CAMBIO
+                const item = editBtn.closest('.gallery-card'); 
                 const { id, filename, description } = item.dataset;
                 openAdminModalForEdit(id, filename, description);
             }
             
             if (deleteBtn) {
-                const item = deleteBtn.closest('.gallery-card'); // <-- CAMBIO
+                const item = deleteBtn.closest('.gallery-card'); 
                 const { id, filename } = item.dataset;
                 
                 if (confirm(`¿Estás seguro de que quieres eliminar el diseño "${filename}"?`)) {
