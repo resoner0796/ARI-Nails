@@ -81,14 +81,13 @@
         }
 
         /* Overlay (fondo oscuro) */
-        /* HE CONSOLIDADO EL ESTILO DE OVERLAY EN UNA SOLA CLASE */
         .page-overlay { 
             display: none;
             position: fixed;
             inset: 0;
             background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
-            z-index: 30; /* Z-index adecuado para estar detrás de los modales/panel */
+            z-index: 30; 
         }
         .page-overlay.open {
             display: block;
@@ -170,60 +169,6 @@
         }
         .primary-btn:hover {
             background-color: #b93b6a;
-        }
-        .secondary-btn {
-            background-color: #9ca3af;
-            color: #ffffff;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s;
-        }
-        .secondary-btn:hover {
-            background-color: #6b7280;
-        }
-        .danger-btn {
-            background-color: #ef4444;
-            color: #ffffff;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s;
-        }
-        .danger-btn:hover {
-            background-color: #dc2626;
-        }
-        
-        /* --- Estilos para CRUD List --- */
-        .crud-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            border-bottom: 1px solid #d19788;
-        }
-        .crud-list-item:last-child {
-            border-bottom: none;
-        }
-        .crud-btn {
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            color: white;
-            font-size: 0.875rem;
-            margin-left: 0.5rem;
-            transition: background-color 0.2s;
-        }
-        .edit-btn {
-            background-color: #3b82f6; /* Azul */
-        }
-        .edit-btn:hover {
-            background-color: #2563eb;
-        }
-        .delete-btn {
-            background-color: #ef4444; /* Rojo */
-        }
-        .delete-btn:hover {
-            background-color: #dc2626;
         }
 
         /* --- Loader --- */
@@ -339,43 +284,6 @@
         </div>
     </div>
 
-    <div id="crud-modal" class="modal max-h-[80vh] flex flex-col">
-        <div class="modal-header p-4 flex justify-between items-center">
-            <h2 class="text-2xl font-bold font-cursive">Administrar Diseños</h2>
-            <button id="close-crud-modal" class="modal-close-btn text-2xl">&times;</button>
-        </div>
-        
-        <div class="p-6 border-b border-d19788">
-            <form id="crud-form">
-                <input type="hidden" id="docId">
-                <div class="mb-4">
-                    <label for="imagePath" class="form-label">Nombre del Archivo (ej. diseño1.png)</label>
-                    <input type="text" id="imagePath" class="form-input" required placeholder="ej. diseño_rojo.png">
-                </div>
-                <div class="mb-4">
-                    <label for="description" class="form-label">Descripción</label>
-                    <textarea id="description" class="form-input" rows="3" required placeholder="ej. Uñas acrílicas rojas..."></textarea>
-                </div>
-                <button type="submit" class="primary-btn">Guardar Diseño</button>
-            </form>
-        </div>
-        
-        <div id="design-list-container" class="p-6 overflow-y-auto">
-            </div>
-    </div> 
-
-    <div id="confirm-modal" class="modal w-full max-w-sm">
-        <div class="p-6 text-center">
-            <h3 class="text-xl font-bold mb-4">¿Estás segura?</h3>
-            <p class="mb-6">Esta acción no se puede deshacer.</p>
-            <div class="flex justify-center space-x-4">
-                <button id="confirm-cancel-btn" class="secondary-btn">Cancelar</button>
-                <button id="confirm-delete-btn" class="danger-btn">Sí, Eliminar</button>
-            </div>
-        </div>
-    </div>
-
-
     <div class="relative min-h-screen">
         <header class="sticky top-0 z-20 w-full p-4">
             <div class="flex items-center justify-between max-w-6xl mx-auto h-16">
@@ -416,17 +324,12 @@
         import { 
             getFirestore, 
             collection, 
-            doc, 
-            addDoc, 
-            setDoc, 
-            deleteDoc, 
-            onSnapshot, 
+            onSnapshot, // Solo necesitamos leer
             query
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuración de Firebase (Usando variables de entorno) ---
         let app, auth, db, currentUserId, designsUnsubscribe;
-        let docIdToDelete = null; // Variable para guardar el ID a borrar
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         try {
@@ -437,7 +340,7 @@
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                setLogLevel('Debug'); // Para ver logs de Firestore en la consola
+                setLogLevel('Debug'); 
                 console.log("Firebase inicializado correctamente.");
             } else {
                 console.error("Configuración de Firebase no encontrada o inválida.");
@@ -455,33 +358,25 @@
         // --- Selectores del DOM ---
         const menuBtn = document.getElementById('menu-btn');
         const sidePanel = document.getElementById('side-panel');
-        // USAMOS UN ÚNICO OVERLAY
         const globalOverlay = document.getElementById('global-overlay'); 
         const loader = document.getElementById('loader');
         const alertBox = document.getElementById('custom-alert');
 
         // Modales
         const loginModal = document.getElementById('login-modal');
-        const crudModal = document.getElementById('crud-modal');
-        const confirmModal = document.getElementById('confirm-modal');
         
         // Botones de Cierre de Modales
         const closeLoginModalBtn = document.getElementById('close-login-modal');
-        const closeCrudModalBtn = document.getElementById('close-crud-modal');
-        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
-        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
 
         // Triggers
         const adminLoginTrigger = document.getElementById('admin-login-trigger');
-        const adminCatalogBtn = document.getElementById('admin-catalog-btn');
+        const adminCatalogBtn = document.getElementById('admin-catalog-btn'); // Aún lo necesitamos para mostrar/ocultar
 
         // Forms
         const loginForm = document.getElementById('login-form');
-        const crudForm = document.getElementById('crud-form');
 
         // Contenedores Dinámicos
         const galleryGrid = document.getElementById('gallery-grid');
-        const designListContainer = document.getElementById('design-list-container');
         
         // --- Funciones de Utilidad ---
         
@@ -497,13 +392,10 @@
             }, 3000);
         }
         
-        // HE MODIFICADO openModal y closeModal para usar el overlay global
         function openModal(modal) {
-            // Cierra el panel lateral si está abierto
             if (sidePanel.classList.contains('open')) {
                 sidePanel.classList.remove('open');
             }
-            // Abre el modal y el overlay global
             modal.classList.add('open');
             globalOverlay.classList.add('open');
             document.body.style.overflow = 'hidden';
@@ -511,7 +403,6 @@
 
         function closeModal(modal) {
             modal.classList.remove('open');
-            // Cierra el overlay global SOLO si NO hay OTROS modales o el panel abierto
             if (!document.querySelector('.modal.open') && !sidePanel.classList.contains('open')) {
                 globalOverlay.classList.remove('open');
                 document.body.style.overflow = 'auto';
@@ -520,11 +411,9 @@
 
         // --- Lógica del Panel Lateral ---
         function togglePanel() {
-            // Cierra modales si hay alguno abierto al abrir el panel
             if (document.querySelector('.modal.open')) {
                 document.querySelector('.modal.open').classList.remove('open');
             }
-
             sidePanel.classList.toggle('open');
             globalOverlay.classList.toggle('open');
             document.body.style.overflow = sidePanel.classList.contains('open') ? 'hidden' : 'auto';
@@ -532,18 +421,13 @@
 
         menuBtn.addEventListener('click', togglePanel);
         
-        // El listener del overlay ahora maneja el cierre de panel y modales
         globalOverlay.addEventListener('click', () => {
             if (sidePanel.classList.contains('open')) {
-                togglePanel(); // Cierra el panel lateral
+                togglePanel();
             }
-            
-            // Cierra cualquier modal abierto
             document.querySelectorAll('.modal.open').forEach(modal => {
                 modal.classList.remove('open');
             });
-            
-            // Cierra el overlay y restablece el scroll si no hay elementos abiertos
             if (!document.querySelector('.modal.open') && !sidePanel.classList.contains('open')) {
                 globalOverlay.classList.remove('open');
                 document.body.style.overflow = 'auto';
@@ -551,36 +435,23 @@
         });
 
         // --- Lógica de Modales ---
-        // Los event listeners usan ahora el único overlay `globalOverlay`
         adminLoginTrigger.addEventListener('click', () => openModal(loginModal));
         closeLoginModalBtn.addEventListener('click', () => closeModal(loginModal));
         
-        adminCatalogBtn.addEventListener('click', () => {
-            // Asegurarse de que el panel lateral se cierre al abrir el modal
-            if (sidePanel.classList.contains('open')) {
-                sidePanel.classList.remove('open');
-            }
-            crudForm.reset();
-            crudForm.docId.value = '';
-            openModal(crudModal);
-        });
-        closeCrudModalBtn.addEventListener('click', () => closeModal(crudModal));
-
-        // Listeners del modal de confirmación
-        confirmCancelBtn.addEventListener('click', () => closeModal(confirmModal));
+        // El listener para adminCatalogBtn ha sido removido
         
-        // --- Lógica de Autenticación (Sin cambios aquí, funciona bien) ---
+        // --- Lógica de Autenticación ---
         onAuthStateChanged(auth, (user) => {
             if (user && !user.isAnonymous) {
                 console.log("Admin logueado:", user.uid);
                 currentUserId = user.uid;
-                adminCatalogBtn.classList.remove('hidden');
+                adminCatalogBtn.classList.remove('hidden'); // Solo muestra el botón
             } else {
                 console.log("Usuario anónimo o deslogueado.");
                 currentUserId = user ? user.uid : null;
-                adminCatalogBtn.classList.add('hidden');
+                adminCatalogBtn.classList.add('hidden'); // Oculta el botón
             }
-            loadDesigns();
+            loadDesigns(); // Carga los diseños independientemente de quién sea
         });
 
         (async () => {
@@ -618,7 +489,7 @@
             }
         });
 
-        // --- Lógica de Firestore (CRUD) ---
+        // --- Lógica de Firestore (SOLO LECTURA) ---
 
         // 1. Cargar y Escuchar Diseños (Read)
         function loadDesigns() {
@@ -631,8 +502,7 @@
 
             const q = query(designsColRef);
             designsUnsubscribe = onSnapshot(q, (snapshot) => {
-                galleryGrid.innerHTML = '';
-                designListContainer.innerHTML = '';
+                galleryGrid.innerHTML = ''; // Limpia la galería
                 
                 if (snapshot.empty) {
                     console.log("No hay diseños en la base de datos.");
@@ -643,11 +513,8 @@
                     const design = doc.data();
                     const designId = doc.id;
                     
+                    // Solo renderizamos en la galería pública
                     renderDesignToGallery(design, designId);
-
-                    if (currentUserId && !auth.currentUser.isAnonymous) {
-                        renderDesignToCRUDList(design, designId);
-                    }
                 });
                 hideLoader();
             }, (error) => {
@@ -662,10 +529,7 @@
             const item = document.createElement('div');
             item.className = 'gallery-item rounded-lg overflow-hidden';
             
-            // Fallback por si la imagen no carga
             const placeholderImg = `https://placehold.co/300x300/fce7f3/86193d?text=Imagen+No+Encontrada`;
-            
-            // Asegurarse de que el path no esté vacío
             const imageSrc = design.imagePath ? design.imagePath : placeholderImg;
             
             item.innerHTML = `
@@ -675,100 +539,7 @@
             galleryGrid.appendChild(item);
         }
 
-
-        // 3. Renderizar en la lista CRUD (Helper)
-        function renderDesignToCRUDList(design, id) {
-            const item = document.createElement('div');
-            item.className = 'crud-list-item';
-            item.innerHTML = `
-                <div class="flex-1 min-w-0">
-                    <p class="font-bold truncate">${design.imagePath}</p>
-                    <p class="text-sm truncate">${design.description}</p>
-                </div>
-                <div>
-                    <button class="crud-btn edit-btn" data-id="${id}" data-path="${design.imagePath}" data-desc="${design.description}">Editar</button>
-                    <button class="crud-btn delete-btn" data-id="${id}">Eliminar</button>
-                </div>
-            `;
-            designListContainer.appendChild(item);
-        }
-
-        // 4. Crear y Actualizar Diseños (Create / Update)
-        crudForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const docId = crudForm.docId.value;
-            const imagePath = crudForm.imagePath.value;
-            const description = crudForm.description.value;
-            
-            if (!imagePath || !description) {
-                showAlert("Todos los campos son obligatorios", true);
-                return;
-            }
-            
-            const data = { imagePath, description };
-            
-            showLoader();
-            try {
-                if (docId) {
-                    // Actualizar (Update)
-                    const docRef = doc(db, designsColPath, docId);
-                    await setDoc(docRef, data, { merge: true });
-                    showAlert('Diseño actualizado');
-                } else {
-                    // Crear (Create)
-                    await addDoc(designsColRef, data);
-                    showAlert('Diseño guardado');
-                }
-                crudForm.reset();
-                crudForm.docId.value = '';
-                closeModal(crudModal);
-            } catch (error) {
-                console.error("Error guardando diseño:", error);
-                showAlert('Error al guardar', true);
-            } finally {
-                hideLoader();
-            }
-        });
-
-        // 5. Manejar Clics de Editar y Eliminar (Delete / Update-Trigger)
-        designListContainer.addEventListener('click', (e) => {
-            const target = e.target;
-            
-            // Botón de Editar
-            if (target.classList.contains('edit-btn')) {
-                crudForm.docId.value = target.dataset.id;
-                crudForm.imagePath.value = target.dataset.path;
-                crudForm.description.value = target.dataset.desc;
-                // No es necesario cerrar el modal, ya está abierto, solo re-abrimos el de CRUD
-                closeModal(crudModal); // Cierra por si acaso (aunque no debería estar)
-                openModal(crudModal); // Re-abre el modal para editar
-            }
-
-            // Botón de Eliminar
-            if (target.classList.contains('delete-btn')) {
-                docIdToDelete = target.dataset.id; // Guarda el ID a borrar
-                openModal(confirmModal); // Muestra el modal de confirmación
-            }
-        });
-
-        // 6. Confirmar Borrado
-        confirmDeleteBtn.addEventListener('click', async () => {
-            if (!docIdToDelete) return; // No hay nada que borrar
-
-            showLoader();
-            try {
-                const docRef = doc(db, designsColPath, docIdToDelete);
-                await deleteDoc(docRef);
-                showAlert('Diseño eliminado');
-            } catch (error) {
-                console.error("Error al eliminar:", error);
-                showAlert('Error al eliminar', true);
-            } finally {
-                hideLoader();
-                closeModal(confirmModal);
-                docIdToDelete = null; // Limpia el ID
-            }
-        });
+        // --- Funciones de CRUD (add, update, delete) han sido eliminadas ---
 
     </script>
 
