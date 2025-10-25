@@ -113,20 +113,44 @@
             border-bottom: 1px solid #b93b6a; 
         }
         
-        /* Galería de Imágenes */
-        .gallery-item {
-            aspect-ratio: 1 / 1; 
-            background-color: #000; /* Fondo negro para 'object-contain' */
+        /* === MODIFICADO: Estructura de Tarjeta de Galería === */
+        
+        /* 1. El item del grid: la "tarjeta" completa (imagen + texto) */
+        .gallery-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
-            position: relative; /* Necesario para los overlays */
         }
-        .gallery-item:hover {
+        .gallery-card:hover {
             transform: scale(1.05);
             box-shadow: 0 10px 20px rgba(209, 151, 136, 0.2); 
         }
+
+        /* 2. El contenedor de la imagen (el cuadro 1:1) */
+        .gallery-item {
+            aspect-ratio: 1 / 1; 
+            background-color: #000; /* Fondo negro para 'object-contain' */
+            position: relative; /* Necesario para los overlays */
+            border-radius: 0.5rem; /* rounded-lg */
+            overflow: hidden; /* Clave para que la imagen no se salga */
+        }
         
-        /* === MODIFICADO: Estilos para botones de Admin (movidos a top-right) === */
+        /* 3. La descripción de texto de abajo */
+        .gallery-description {
+            padding-top: 0.5rem; /* 8px */
+            text-align: center;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            color: #fce7f3;
+            /* Limita el texto a 2 líneas */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            min-height: 2.75rem; /* Espacio reservado para 2 líneas (aprox) */
+        }
+        
+        /* Estilos para botones de Admin (movidos a top-right) */
         .admin-controls {
             position: absolute;
             top: 0.5rem; /* 8px */
@@ -135,8 +159,9 @@
             gap: 0.25rem;
             opacity: 0.8;
             transition: opacity 0.2s ease;
+            z-index: 10; /* Asegura que esté sobre la imagen */
         }
-        .gallery-item:hover .admin-controls {
+        .gallery-card:hover .admin-controls {
             opacity: 1;
         }
         .admin-btn {
@@ -509,24 +534,24 @@
                     const design = doc.data();
                     const designId = doc.id;
                     
-                    const designElement = document.createElement('div');
-                    designElement.className = 'gallery-item rounded-lg overflow-hidden';
-                    designElement.dataset.id = designId;
-                    designElement.dataset.filename = design.fileName;
-                    designElement.dataset.description = design.description || "";
+                    // --- 1. Crear la "tarjeta" (el item del grid) ---
+                    const cardElement = document.createElement('div');
+                    cardElement.className = 'gallery-card';
+                    cardElement.dataset.id = designId;
+                    cardElement.dataset.filename = design.fileName;
+                    cardElement.dataset.description = design.description || "";
                     
-                    // --- NUEVO: Genera la descripción si existe ---
+                    // --- 2. Genera la descripción (si existe) ---
                     let descriptionHTML = '';
                     if (design.description) {
-                        // Overlay en la parte inferior
                         descriptionHTML = `
-                            <div class="absolute bottom-1 left-1 right-1 p-2 bg-black bg-opacity-60 text-white text-xs rounded truncate">
+                            <div class="gallery-description">
                                 ${design.description}
                             </div>
                         `;
                     }
                     
-                    // --- Genera botones de admin si el usuario está logueado ---
+                    // --- 3. Genera botones de admin (si es admin) ---
                     let adminButtonsHTML = '';
                     if (isUserAdmin) {
                         adminButtonsHTML = `
@@ -541,14 +566,17 @@
                         `;
                     }
 
-                    // --- MODIFICADO: Añadido "./" a la ruta y la descripción ---
-                    designElement.innerHTML = `
-                        <img src="./${design.fileName}" alt="${design.description || 'Diseño de uñas'}" class="w-full h-full object-contain">
+                    // --- 4. Ensambla el HTML de la tarjeta ---
+                    // CORRECCIÓN DE RUTA: Añadido "./" al src
+                    cardElement.innerHTML = `
+                        <div class="gallery-item">
+                            <img src="./${design.fileName}" alt="${design.description || 'Diseño de uñas'}" class="w-full h-full object-contain">
+                            ${adminButtonsHTML}
+                        </div>
                         ${descriptionHTML}
-                        ${adminButtonsHTML}
                     `;
                     
-                    galleryGrid.appendChild(designElement);
+                    galleryGrid.appendChild(cardElement);
                 });
             } catch (error) {
                 console.error("Error al cargar diseños: ", error);
@@ -585,11 +613,9 @@
                 };
 
                 if (docIdToEdit) {
-                    // --- MODO UPDATE ---
                     const docRef = doc(db, "designs", docIdToEdit);
                     await updateDoc(docRef, designData);
                 } else {
-                    // --- MODO CREATE ---
                     designData.createdAt = new Date(); 
                     await addDoc(collection(db, "designs"), designData);
                 }
@@ -607,18 +633,19 @@
         });
         
         // --- 3. BORRAR (Delete) y EDITAR (Click Handlers) ---
+        // MODIFICADO: Escucha por '.gallery-card'
         galleryGrid.addEventListener('click', async (e) => {
             const editBtn = e.target.closest('.admin-btn-edit');
             const deleteBtn = e.target.closest('.admin-btn-delete');
             
             if (editBtn) {
-                const item = editBtn.closest('.gallery-item');
+                const item = editBtn.closest('.gallery-card'); // <-- CAMBIO
                 const { id, filename, description } = item.dataset;
                 openAdminModalForEdit(id, filename, description);
             }
             
             if (deleteBtn) {
-                const item = deleteBtn.closest('.gallery-item');
+                const item = deleteBtn.closest('.gallery-card'); // <-- CAMBIO
                 const { id, filename } = item.dataset;
                 
                 if (confirm(`¿Estás seguro de que quieres eliminar el diseño "${filename}"?`)) {
