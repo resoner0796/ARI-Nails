@@ -13,8 +13,7 @@
 
     <script>
         (function() {
-            if (localStorage.theme === 'dark' ||
-               (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
@@ -107,7 +106,6 @@
         #citas-list-container { max-height: 60vh; overflow-y: auto; }
         .cita-item { border-bottom: 1px solid #e5e7eb; }
         .dark .cita-item { border-bottom-color: #374151; }
-        /* === NUEVO/MODIFICADO: Estilos para status y botones de Admin Citas === */
         .cita-status-pendiente { color: #d97706; } .dark .cita-status-pendiente { color: #f59e0b; }
         .cita-status-confirmada { color: #16a34a; } .dark .cita-status-confirmada { color: #4ade80; }
         .cita-status-cancelada { color: #dc2626; } .dark .cita-status-cancelada { color: #f87171; }
@@ -216,7 +214,7 @@
                     {/* */}
                     <small class="text-xs text-gray-500 dark:text-gray-400">Solo Viernes, Sábado y Domingo disponibles.</small>
                     </div>
-                    <div class="mb-4"><label for="appointment-time" class="block text-sm font-semibold mb-2 dark:text-pink-100">Hora (10:00 AM - 8:00 PM)</label><input type="time" id="appointment-time" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="10:00" max="20:00" step="1800" required></div>
+                    <div class="mb-4"><label for="appointment-time" class="block text-sm font-semibold mb-2 dark:text-pink-100">Hora (10:00 AM - 8:00 PM)</label><input type="time" id="appointment-time" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" min="10:00" max="20:00" step="1800" required></div> {/* step="1800" = incrementos de 30 min */}
                     <div id="appointment-error-step2" class="text-red-600 text-sm text-center mb-4 hidden"></div>
                     <button type="submit" class="w-full bg-pink-600 text-white py-2 rounded-md font-bold hover:bg-pink-700 transition-colors dark:bg-pink-700 dark:hover:bg-pink-600">Continuar a Pago</button>
                 </form>
@@ -325,8 +323,8 @@
         function closeAppointmentModal(){appointmentModal.classList.add('hidden');appointmentForm.reset();}
         agendarCitaBtn.addEventListener('click',(e)=>{e.preventDefault();openAppointmentModal();}); closeAppointmentModalBtn.addEventListener('click',closeAppointmentModal);
         appointmentNextStep1Btn.addEventListener('click',()=>{if(!selectedDesignForAppointment){appointmentErrorStep1.classList.remove('hidden');return;}appointmentData.design=selectedDesignForAppointment;step1Design.classList.add('hidden');step2Datetime.classList.remove('hidden');});
-        // MODIFICADO: Step 2 -> Step 3 (Incluye Teléfono)
-        appointmentForm.addEventListener('submit',(e)=>{e.preventDefault();appointmentErrorStep2.classList.add('hidden');const name=appointmentName.value,phone=appointmentPhone.value,date=appointmentDate.value,time=appointmentTime.value;if(!name||!phone||!date||!time){appointmentErrorStep2.textContent="Todos los campos son obligatorios.";appointmentErrorStep2.classList.remove('hidden');return;}const selectedDay=new Date(date+'T00:00:00-06:00').getUTCDay();if(![0,5,6].includes(selectedDay)){appointmentErrorStep2.textContent="Solo se aceptan citas en Viernes, Sábado o Domingo.";appointmentErrorStep2.classList.remove('hidden');return;}if(time<"10:00"||time>"20:00"){appointmentErrorStep2.textContent="El horario es de 10:00 AM a 8:00 PM.";appointmentErrorStep2.classList.remove('hidden');return;}appointmentData.name=name;appointmentData.phone=phone;appointmentData.date=date;appointmentData.time=time;paymentConcept.textContent=name;const whatsappMsg=encodeURIComponent(`Hola ARI Nails, soy ${name} y quiero agendar mi cita para el ${date} a las ${time}. Adjunto mi comprobante de anticipo.`);whatsappLink.href=`https://wa.me/521XXXXXXXXXX?text=${whatsappMsg}`;step2Datetime.classList.add('hidden');step3Payment.classList.remove('hidden');}); // REEMPLAZA TU NÚMERO
+        // MODIFICADO: Step 2 -> Step 3 (Incluye Teléfono y validaciones)
+        appointmentForm.addEventListener('submit',(e)=>{e.preventDefault();appointmentErrorStep2.classList.add('hidden');const name=appointmentName.value,phone=appointmentPhone.value,date=appointmentDate.value,time=appointmentTime.value;if(!name||!phone||!date||!time){appointmentErrorStep2.textContent="Todos los campos son obligatorios.";appointmentErrorStep2.classList.remove('hidden');return;}const selectedDay=new Date(date+'T00:00:00-06:00').getUTCDay();if(![0,5,6].includes(selectedDay)){appointmentErrorStep2.textContent="Solo se aceptan citas en Viernes, Sábado o Domingo.";appointmentErrorStep2.classList.remove('hidden');return;}if(time<"10:00"||time>"20:00"){appointmentErrorStep2.textContent="El horario es de 10:00 AM a 8:00 PM.";appointmentErrorStep2.classList.remove('hidden');return;}appointmentData.name=name;appointmentData.phone=phone;appointmentData.date=date;appointmentData.time=time;paymentConcept.textContent=name;const whatsappMsg=encodeURIComponent(`Hola ARI Nails, soy ${name} (${phone}) y quiero agendar mi cita para el ${date} a las ${time}. Diseño: ${appointmentData.design || 'No especificado'}. Adjunto mi comprobante de anticipo.`);whatsappLink.href=`https://wa.me/521XXXXXXXXXX?text=${whatsappMsg}`;step2Datetime.classList.add('hidden');step3Payment.classList.remove('hidden');}); // REEMPLAZA TU NÚMERO
         // MODIFICADO: Step 3 -> Guardar en Firestore (Añade Teléfono y Status)
         appointmentConfirmBtn.addEventListener('click',async()=>{setAppointmentLoading(true);try{appointmentData.createdAt=Timestamp.fromDate(new Date());appointmentData.status='pendiente';const docRef=await addDoc(collection(db,"appointments"),appointmentData);console.log("Cita registrada con ID: ",docRef.id);setAppointmentLoading(false);step3Payment.innerHTML=`<h2 class="text-2xl font-bold text-center mb-4 font-cursive dark:text-pink-100">¡Cita Registrada!</h2><p class="text-center text-gray-700 dark:text-gray-100">Tu cita ha sido pre-registrada. Por favor, envía tu comprobante por WhatsApp para confirmarla.</p>`;setTimeout(closeAppointmentModal,3000);}catch(error){console.error("Error al guardar cita: ",error);setAppointmentLoading(false);alert("Hubo un error al registrar tu cita. Intenta de nuevo.");}});
 
