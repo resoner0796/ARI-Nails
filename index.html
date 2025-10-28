@@ -109,7 +109,6 @@
         #appointment-gallery-grid { max-height: 300px; overflow-y: auto; }
         .appointment-design.selected { border: 4px solid #d19788; box-shadow: 0 0 15px #d19788; }
 
-        /* --- NUEVO: Estilos para los botones de horarios --- */
         .time-slot-btn {
             padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;
             text-align: center; cursor: pointer; transition: all 0.2s ease;
@@ -138,8 +137,6 @@
         .dark .time-slot-btn:disabled {
             background-color: #1f2937; color: #4b5563;
         }
-        /* --- Fin de estilos nuevos --- */
-
 
         #citas-list-container { max-height: 60vh; overflow-y: auto; }
         .cita-item { border-bottom: 1px solid #e5e7eb; }
@@ -151,6 +148,14 @@
         .cita-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .confirm-btn { background-color: #10b981; color: white; } .confirm-btn:hover:not(:disabled) { background-color: #059669; }
         .cancel-btn { background-color: #ef4444; color: white; } .cancel-btn:hover:not(:disabled) { background-color: #dc2626; }
+        
+        /* --- NUEVO: Estilo para la imagen miniatura en el modal de citas --- */
+        .admin-cita-img {
+            border: 1px solid #e5e7eb;
+        }
+        .dark .admin-cita-img {
+            border-color: #374151;
+        }
     </style>
 </head>
 <body class="overflow-x-hidden font-sans">
@@ -314,7 +319,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        // CAMBIO: Importar 'where' y 'query' para la consulta de horarios
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, Timestamp, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -334,13 +338,11 @@
         const lightboxModal=document.getElementById('lightbox-modal'), lightboxImage=document.getElementById('lightbox-image');
 
         // --- Referencias DOM (Agendar Cita) ---
-        // CAMBIO: Eliminada la ref a 'appointmentTime', añadidas refs para los slots de horario
         const appointmentModal=document.getElementById('appointment-modal'), closeAppointmentModalBtn=document.getElementById('close-appointment-modal-btn'), step1Design=document.getElementById('step-1-design'), step2Datetime=document.getElementById('step-2-datetime'), step3Payment=document.getElementById('step-3-payment'), appointmentGalleryGrid=document.getElementById('appointment-gallery-grid'), appointmentNextStep1Btn=document.getElementById('appointment-next-step-1'), appointmentForm=document.getElementById('appointment-form'), appointmentName=document.getElementById('appointment-name'), appointmentPhone=document.getElementById('appointment-phone'), appointmentDate=document.getElementById('appointment-date'), appointmentErrorStep1=document.getElementById('appointment-error-step1'), appointmentErrorStep2=document.getElementById('appointment-error-step2'), paymentConcept=document.getElementById('payment-concept'), whatsappLink=document.getElementById('whatsapp-link'), appointmentConfirmBtn=document.getElementById('appointment-confirm-btn'), appointmentSubmitText=document.getElementById('appointment-submit-text'), appointmentSpinner=document.getElementById('appointment-spinner');
         const appointmentTimeSlots = document.getElementById('appointment-time-slots');
         const appointmentTimeSlotsLoader = document.getElementById('appointment-time-slots-loader');
         const appointmentTimeSlotsPlaceholder = document.getElementById('appointment-time-slots-placeholder');
         
-        // CAMBIO: 'appointmentData' ahora guarda 'selectedTime'
         let selectedDesignForAppointment=null, appointmentData={ selectedTime: null };
 
         // --- Referencias DOM (Admin Citas) ---
@@ -358,7 +360,7 @@
         function setAdminLoading(isLoading){if(isLoading){adminSubmitText.classList.add('hidden');adminSpinner.classList.remove('hidden');adminSubmitBtn.disabled=true;}else{adminSubmitText.classList.remove('hidden');adminSpinner.classList.add('hidden');adminSubmitBtn.disabled=false;}}
         function setAppointmentLoading(isLoading){if(isLoading){appointmentSubmitText.classList.add('hidden');appointmentSpinner.classList.remove('hidden');appointmentConfirmBtn.disabled=true;}else{appointmentSubmitText.classList.remove('hidden');appointmentSpinner.classList.add('hidden');appointmentConfirmBtn.disabled=false;}}
 
-        // --- NUEVO: Funciones para manejar horarios ---
+        // --- Funciones para manejar horarios ---
         function generateTimeSlots(startHour, endHour, intervalMinutes) {
             const slots = [];
             let current = new Date();
@@ -376,7 +378,6 @@
         async function getBookedTimes(dateString) {
             const bookedTimes = [];
             try {
-                // Consultar citas en la fecha dada que estén 'pendientes' o 'confirmadas'
                 const q = query(
                     collection(db, "appointments"), 
                     where("date", "==", dateString),
@@ -389,12 +390,11 @@
                 return bookedTimes;
             } catch (error) {
                 console.error("Error getting booked times: ", error);
-                return []; // Devolver vacío en caso de error para no bloquear
+                return []; 
             }
         }
         
         async function populateAvailableTimes(dateString) {
-            // Si no hay fecha, limpiar y mostrar placeholder
             if (!dateString) {
                 appointmentTimeSlots.innerHTML = '';
                 appointmentTimeSlotsPlaceholder.classList.remove('hidden');
@@ -405,16 +405,14 @@
             appointmentTimeSlotsPlaceholder.classList.add('hidden');
             appointmentTimeSlots.innerHTML = '';
             appointmentTimeSlotsLoader.classList.remove('hidden');
-            appointmentData.selectedTime = null; // Resetear la hora seleccionada
+            appointmentData.selectedTime = null; 
 
             try {
-                // Generar todos los horarios posibles de 10:00 a 20:00, cada 30 min
                 const allSlots = generateTimeSlots(10, 20, 30);
                 const bookedSlots = await getBookedTimes(dateString);
                 
                 appointmentTimeSlotsLoader.classList.add('hidden');
 
-                // Filtrar para obtener solo los disponibles
                 const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
 
                 if (availableSlots.length === 0) {
@@ -422,24 +420,20 @@
                     return;
                 }
 
-                // Crear un botón por cada horario disponible
                 availableSlots.forEach(slot => {
                     const btn = document.createElement('button');
-                    btn.type = "button"; // Para que no envíe el formulario
+                    btn.type = "button"; 
                     btn.className = "time-slot-btn";
                     btn.textContent = slot;
                     btn.dataset.time = slot;
                     
                     btn.addEventListener('click', () => {
-                        // Quitar 'selected' de otros botones
                         appointmentTimeSlots.querySelectorAll('.time-slot-btn').forEach(b => {
                             b.classList.remove('selected');
                         });
-                        // Añadir 'selected' a este botón
                         btn.classList.add('selected');
-                        // Guardar la hora
                         appointmentData.selectedTime = slot;
-                        appointmentErrorStep2.classList.add('hidden'); // Ocultar error si había
+                        appointmentErrorStep2.classList.add('hidden'); 
                     });
                     appointmentTimeSlots.appendChild(btn);
                 });
@@ -450,9 +444,7 @@
                 appointmentTimeSlots.innerHTML = '<p class="text-sm text-center text-red-500 col-span-full">Error al cargar horarios. Intenta de nuevo.</p>';
             }
         }
-        // --- Fin de funciones de horarios ---
-
-
+        
         // === Lógica Auth ===
         onAuthStateChanged(auth,(user)=>{if(user){showAdminUI();}else{showVisitorUI();}loadDesigns();});
         adminLoginBtn.addEventListener('click',openLoginModal); closeModalBtn.addEventListener('click',closeLoginModal); loginModal.addEventListener('click',(e)=>{if(e.target===loginModal)closeLoginModal();});
@@ -473,16 +465,14 @@
         // === Lógica Modal de Citas ===
         async function loadDesignsForAppointment(){appointmentGalleryGrid.innerHTML='';try{const q=query(collection(db,"designs"),orderBy("createdAt","desc"));const querySnapshot=await getDocs(q);querySnapshot.forEach((doc)=>{const design=doc.data();const cardElement=document.createElement('div');cardElement.className='appointment-design gallery-item';cardElement.dataset.filename=design.fileName;cardElement.innerHTML=`<img src="./${design.fileName}" alt="${design.description||'Diseño de uñas'}" class="w-full h-full object-contain">`;cardElement.addEventListener('click',()=>{appointmentGalleryGrid.querySelectorAll('.appointment-design').forEach(el=>el.classList.remove('selected'));cardElement.classList.add('selected');selectedDesignForAppointment=design.fileName;appointmentErrorStep1.classList.add('hidden');});appointmentGalleryGrid.appendChild(cardElement);});}catch(error){console.error("Error al cargar diseños para cita: ",error);}}
         
-        // CAMBIO: openAppointmentModal resetea los nuevos campos de horario
         function openAppointmentModal(){
             step1Design.classList.remove('hidden');step2Datetime.classList.add('hidden');step3Payment.classList.add('hidden');
             appointmentForm.reset();
             selectedDesignForAppointment=null;
-            appointmentData={ selectedTime: null }; // Resetear datos de cita
+            appointmentData={ selectedTime: null }; 
             appointmentErrorStep1.classList.add('hidden');
             appointmentErrorStep2.classList.add('hidden');
             
-            // Limpiar y resetear los slots de horario
             appointmentTimeSlots.innerHTML = '';
             appointmentTimeSlotsPlaceholder.classList.remove('hidden');
             appointmentTimeSlotsLoader.classList.add('hidden');
@@ -493,14 +483,12 @@
         function closeAppointmentModal(){appointmentModal.classList.add('hidden');appointmentForm.reset();}
         agendarCitaBtn.addEventListener('click',(e)=>{e.preventDefault();openAppointmentModal();}); closeAppointmentModalBtn.addEventListener('click',closeAppointmentModal);
         
-        // NUEVO: Listener para el input de fecha
         appointmentDate.addEventListener('change', () => {
             populateAvailableTimes(appointmentDate.value);
         });
 
         appointmentNextStep1Btn.addEventListener('click',()=>{if(!selectedDesignForAppointment){appointmentErrorStep1.classList.remove('hidden');return;}appointmentData.design=selectedDesignForAppointment;step1Design.classList.add('hidden');step2Datetime.classList.remove('hidden');});
         
-        // CAMBIO: Lógica de envío de formulario (Paso 2) actualizada
         appointmentForm.addEventListener('submit',(e)=>{
             e.preventDefault();
             appointmentErrorStep2.classList.add('hidden');
@@ -508,28 +496,28 @@
             const name = appointmentName.value;
             const phone = appointmentPhone.value;
             const date = appointmentDate.value;
-            const time = appointmentData.selectedTime; // Obtener la hora del slot seleccionado
+            const time = appointmentData.selectedTime; 
 
-            // Validar que se haya seleccionado una hora
             if(!name || !phone || !date || !time){
                 appointmentErrorStep2.textContent="Todos los campos son obligatorios, incluyendo la hora.";
                 appointmentErrorStep2.classList.remove('hidden');
                 return;
             }
             
-            const selectedDay=new Date(date+'T00:00:00-06:00').getUTCDay();
+            // CAMBIO: Se usa T00:00:00Z (UTC) para evitar que el navegador local afecte el día
+            const selectedDay=new Date(date+'T00:00:00Z').getUTCDay();
+            
+            // Array [0,5,6] es para Domingo, Viernes, Sábado
             if(![0,5,6].includes(selectedDay)){
                 appointmentErrorStep2.textContent="Solo se aceptan citas en Viernes, Sábado o Domingo.";
                 appointmentErrorStep2.classList.remove('hidden');
                 return;
             }
             
-            // Ya no se necesita la validación de min/max hora porque solo se pueden seleccionar slots válidos
-
             appointmentData.name=name;
             appointmentData.phone=phone;
             appointmentData.date=date;
-            appointmentData.time=time; // Guardar la hora seleccionada
+            appointmentData.time=time; 
             paymentConcept.textContent=name;
             const whatsappMsg=encodeURIComponent(`Hola ARI Nails, soy ${name} (${phone}) y quiero agendar mi cita para el ${date} a las ${time}. Diseño: ${appointmentData.design || 'No especificado'}. Adjunto mi comprobante de anticipo.`);
             whatsappLink.href=`https://wa.me/528999104919?text=${whatsappMsg}`;
@@ -542,9 +530,121 @@
         function openCitasModal(e){e.preventDefault();citasListContainer.innerHTML='<p class="text-center dark:text-pink-100">Cargando citas...</p>';loadAppointments();citasModal.classList.remove('hidden');}
         function closeCitasModal(){citasModal.classList.add('hidden');} closeCitasModalBtn.addEventListener('click',closeCitasModal);
         
-        async function loadAppointments(){try{const q=query(collection(db,"appointments"),orderBy("date","asc"),orderBy("time","asc"));const querySnapshot=await getDocs(q);if(querySnapshot.empty){citasListContainer.innerHTML='<p class="text-center dark:text-pink-100">No hay citas registradas.</p>';return;}citasListContainer.innerHTML='';querySnapshot.forEach(doc=>{const cita=doc.data(),citaId=doc.id,status=cita.status||'pendiente';const dateObj=new Date(cita.date+'T'+cita.time+'-06:00');const formattedDate=dateObj.toLocaleDateString('es-ES',{weekday:'short',year:'numeric',month:'short',day:'numeric'});const formattedTime=dateObj.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});let statusClass='',statusText='';switch(status){case'confirmada':statusClass='cita-status-confirmada';statusText='Confirmada';break;case'cancelada':statusClass='cita-status-cancelada';statusText='Cancelada';break;default:statusClass='cita-status-pendiente';statusText='Pendiente';}let actionButtonsHTML='';if(status!=='cancelada'){if(status==='pendiente'){actionButtonsHTML+=`<button data-id="${citaId}" class="cita-action-btn confirm-btn mr-1">Confirmar</button>`;}actionButtonsHTML+=`<button data-id="${citaId}" class="cita-action-btn cancel-btn">Cancelar</button>`;}const citaElement=document.createElement('div');citaElement.className='cita-item p-4 flex justify-between items-center flex-wrap gap-2';citaElement.innerHTML=`<div><h3 class="font-bold text-lg text-pink-700 dark:text-pink-300">${cita.name}</h3><p class="font-semibold">${formattedDate} - ${formattedTime}</p><p class="text-sm">Tel: ${cita.phone||'N/A'}</p><p class="text-sm">Diseño: ${cita.design||'No especificado'}</p><p class="text-sm font-semibold ${statusClass}">Estado: ${statusText}</p></div><div class="flex-shrink-0">${actionButtonsHTML}</div>`;citasListContainer.appendChild(citaElement);});}catch(error){console.error("Error al cargar citas: ",error);citasListContainer.innerHTML='<p class="text-center text-red-500">Error al cargar las citas.</p>';}}
+        // ***** CAMBIOS AQUÍ (Timezone, Imagen y Click) *****
+        async function loadAppointments(){
+            try{
+                const q=query(collection(db,"appointments"),orderBy("date","asc"),orderBy("time","asc"));
+                const querySnapshot=await getDocs(q);
+                if(querySnapshot.empty){
+                    citasListContainer.innerHTML='<p class="text-center dark:text-pink-100">No hay citas registradas.</p>';
+                    return;
+                }
+                citasListContainer.innerHTML='';
+                querySnapshot.forEach(doc=>{
+                    const cita=doc.data(),citaId=doc.id,status=cita.status||'pendiente';
+
+                    // --- INICIO CORRECCIÓN DE HORA ---
+                    // Se crea la fecha usando las partes para evitar que JS la interprete en otra zona horaria
+                    const dateParts = cita.date.split('-'); // ["2025", "10", "28"]
+                    // El mes es 0-indexado, por eso se resta 1
+                    const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+
+                    const formattedDate = dateObj.toLocaleDateString('es-ES', {
+                        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+                    });
+                    
+                    // Se usa el string de la hora *directamente* como se guardó
+                    const formattedTime = cita.time; 
+                    // --- FIN CORRECCIÓN DE HORA ---
+
+                    let statusClass='',statusText='';
+                    switch(status){
+                        case'confirmada':statusClass='cita-status-confirmada';statusText='Confirmada';break;
+                        case'cancelada':statusClass='cita-status-cancelada';statusText='Cancelada';break;
+                        default:statusClass='cita-status-pendiente';statusText='Pendiente';
+                    }
+                    
+                    let actionButtonsHTML='';
+                    if(status!=='cancelada'){
+                        if(status==='pendiente'){
+                            actionButtonsHTML+=`<button data-id="${citaId}" class="cita-action-btn confirm-btn mr-1">Confirmar</button>`;
+                        }
+                        actionButtonsHTML+=`<button data-id="${citaId}" class="cita-action-btn cancel-btn">Cancelar</button>`;
+                    }
+
+                    // --- INICIO MEJORA DE IMAGEN ---
+                    // Se crea el HTML para mostrar la imagen (si existe)
+                    const designHTML = cita.design
+                        ? `<div class="flex items-center gap-2 mt-1">
+                             <img src="./${cita.design}" alt="${cita.design}" class="w-12 h-12 object-contain rounded-md bg-gray-200 dark:bg-gray-700 cursor-pointer admin-cita-img">
+                             <p class="text-sm">${cita.design}</p>
+                           </div>`
+                        : '<p class="text-sm">Diseño: No especificado</p>';
+                    // --- FIN MEJORA DE IMAGEN ---
+
+                    const citaElement=document.createElement('div');
+                    citaElement.className='cita-item p-4 flex justify-between items-center flex-wrap gap-2';
+                    // Se actualiza el HTML para incluir las mejoras
+                    citaElement.innerHTML=`
+                        <div>
+                            <h3 class="font-bold text-lg text-pink-700 dark:text-pink-300">${cita.name}</h3>
+                            <p class="font-semibold">${formattedDate} - ${formattedTime}</p>
+                            <p class="text-sm">Tel: ${cita.phone||'N/A'}</p>
+                            ${designHTML}
+                            <p class="text-sm font-semibold ${statusClass} mt-2">Estado: ${statusText}</p>
+                        </div>
+                        <div class="flex-shrink-0">${actionButtonsHTML}</div>`;
+                    citasListContainer.appendChild(citaElement);
+                });
+            } catch(error) {
+                console.error("Error al cargar citas: ",error);
+                citasListContainer.innerHTML='<p class="text-center text-red-500">Error al cargar las citas.</p>';
+            }
+        }
         
-        citasListContainer.addEventListener('click',async(e)=>{const confirmBtn=e.target.closest('.confirm-btn'),cancelBtn=e.target.closest('.cancel-btn');if(confirmBtn){const citaId=confirmBtn.dataset.id;confirmBtn.disabled=true;try{await updateDoc(doc(db,"appointments",citaId),{status:'confirmada'});loadAppointments();}catch(error){console.error("Error al confirmar cita:",error);alert("No se pudo confirmar la cita.");confirmBtn.disabled=false;}}if(cancelBtn){const citaId=cancelBtn.dataset.id;if(confirm("¿Estás seguro de cancelar esta cita?")){cancelBtn.disabled=true;try{await updateDoc(doc(db,"appointments",citaId),{status:'cancelada'});loadAppointments();}catch(error){console.error("Error al cancelar cita:",error);alert("No se pudo cancelar la cita.");cancelBtn.disabled=false;}}}});
+        // ***** CAMBIOS AQUÍ (Listener para la imagen) *****
+        citasListContainer.addEventListener('click', async (e) => {
+            const confirmBtn = e.target.closest('.confirm-btn');
+            const cancelBtn = e.target.closest('.cancel-btn');
+            // --- INICIO MEJORA DE CLIC EN IMAGEN ---
+            const imgBtn = e.target.closest('.admin-cita-img');
+
+            if (imgBtn) {
+                e.preventDefault(); // Prevenir cualquier acción por defecto
+                lightboxImage.src = imgBtn.src; // Poner la imagen del thumbnail en el visor grande
+                lightboxModal.classList.remove('hidden'); // Mostrar el visor
+                return; // Salir de la función
+            }
+            // --- FIN MEJORA DE CLIC EN IMAGEN ---
+
+            if (confirmBtn) {
+                const citaId = confirmBtn.dataset.id;
+                confirmBtn.disabled = true;
+                try {
+                    await updateDoc(doc(db, "appointments", citaId), { status: 'confirmada' });
+                    loadAppointments();
+                } catch (error) {
+                    console.error("Error al confirmar cita:", error);
+                    alert("No se pudo confirmar la cita.");
+                    confirmBtn.disabled = false;
+                }
+            }
+            
+            if (cancelBtn) {
+                const citaId = cancelBtn.dataset.id;
+                if (confirm("¿Estás seguro de cancelar esta cita?")) {
+                    cancelBtn.disabled = true;
+                    try {
+                        await updateDoc(doc(db, "appointments", citaId), { status: 'cancelada' });
+                        loadAppointments();
+                    } catch (error) {
+                        console.error("Error al cancelar cita:", error);
+                        alert("No se pudo cancelar la cita.");
+                        cancelBtn.disabled = false;
+                    }
+                }
+            }
+        });
 
     </script>
 
