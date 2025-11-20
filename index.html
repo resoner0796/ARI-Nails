@@ -361,6 +361,13 @@
         function setAppointmentLoading(isLoading){if(isLoading){appointmentSubmitText.classList.add('hidden');appointmentSpinner.classList.remove('hidden');appointmentConfirmBtn.disabled=true;}else{appointmentSubmitText.classList.remove('hidden');appointmentSpinner.classList.add('hidden');appointmentConfirmBtn.disabled=false;}}
 
         // --- Funciones para manejar horarios ---
+        
+        // Función auxiliar para convertir "10:30" a minutos (ej. 630)
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
         function generateTimeSlots(startHour, endHour, intervalMinutes) {
             const slots = [];
             let current = new Date();
@@ -413,10 +420,31 @@
                 
                 appointmentTimeSlotsLoader.classList.add('hidden');
 
-                const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
+                // --- NUEVA LÓGICA DE BLOQUEO (3 HORAS) ---
+                const SERVICE_DURATION = 180; // Duración en minutos (3 horas)
+
+                const availableSlots = allSlots.filter(slot => {
+                    const slotStart = timeToMinutes(slot);
+                    const slotEnd = slotStart + SERVICE_DURATION;
+
+                    // Verificamos si este slot choca con ALGUNA cita agendada
+                    const hasConflict = bookedSlots.some(bookedTime => {
+                        const bookedStart = timeToMinutes(bookedTime);
+                        const bookedEnd = bookedStart + SERVICE_DURATION;
+
+                        // Lógica de intersección: 
+                        // Hay choque si el inicio de la nueva cita es antes del fin de la existente
+                        // Y el fin de la nueva cita es después del inicio de la existente.
+                        return (slotStart < bookedEnd) && (slotEnd > bookedStart);
+                    });
+
+                    // Si NO hay conflicto, el horario está disponible
+                    return !hasConflict;
+                });
+                // -------------------------------------------
 
                 if (availableSlots.length === 0) {
-                    appointmentTimeSlots.innerHTML = '<p class="text-sm text-center text-red-500 col-span-full">No hay horarios disponibles para este día. Por favor, elige otra fecha.</p>';
+                    appointmentTimeSlots.innerHTML = '<p class="text-sm text-center text-red-500 col-span-full">No hay horarios disponibles para este día debido a la duración de los servicios (3hrs). Por favor, elige otra fecha.</p>';
                     return;
                 }
 
