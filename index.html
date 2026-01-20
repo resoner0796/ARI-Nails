@@ -154,6 +154,22 @@
         
         .admin-cita-img { border: 1px solid #e5e7eb; }
         .dark .admin-cita-img { border-color: #374151; }
+
+        /* Estilo para el input file personalizado */
+        .custom-file-upload {
+            border: 2px dashed #ccc;
+            display: inline-block;
+            padding: 10px 12px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+        .custom-file-upload:hover { border-color: #86193d; background-color: rgba(134, 25, 61, 0.1); }
+        .dark .custom-file-upload { border-color: #4b5563; }
+        .dark .custom-file-upload:hover { border-color: #fce7f3; background-color: rgba(252, 231, 243, 0.1); }
+        .custom-file-upload.selected { border-color: #16a34a; background-color: rgba(22, 163, 74, 0.1); color: #16a34a; }
     </style>
 </head>
 <body class="overflow-x-hidden font-sans">
@@ -249,8 +265,23 @@
 
             <div id="step-1-design">
                 <h2 class="text-2xl font-bold text-center mb-4 font-cursive dark:text-pink-100">Paso 1: Elige tu diseño</h2>
+                
+                <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center border border-dashed border-gray-300 dark:border-gray-500">
+                    <p class="mb-2 font-semibold text-sm dark:text-white">¿Tienes tu propia idea? Sube tu foto:</p>
+                    <label for="client-design-upload" class="custom-file-upload text-sm text-gray-700 dark:text-gray-200">
+                        <span id="client-upload-text">Seleccionar imagen de mi dispositivo</span>
+                    </label>
+                    <input type="file" id="client-design-upload" accept="image/*" class="hidden">
+                    <div id="client-upload-preview" class="mt-2 hidden">
+                        <p class="text-xs text-green-600 dark:text-green-400 mb-1">¡Imagen seleccionada!</p>
+                        <img id="client-upload-img" src="" class="h-24 w-auto mx-auto rounded-md shadow-sm">
+                    </div>
+                </div>
+
+                <div class="text-center mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">- O elige del catálogo -</div>
+
                 <div id="appointment-gallery-grid" class="grid grid-cols-3 gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-md"></div>
-                <div id="appointment-error-step1" class="text-red-600 text-sm text-center mt-4 hidden">Debes seleccionar un diseño.</div>
+                <div id="appointment-error-step1" class="text-red-600 text-sm text-center mt-4 hidden">Debes seleccionar un diseño o subir una foto.</div>
                 <button id="appointment-next-step-1" class="w-full mt-4 bg-pink-600 text-white py-2 rounded-md font-bold hover:bg-pink-700 transition-colors dark:bg-pink-700 dark:hover:bg-pink-600">Siguiente</button>
             </div>
 
@@ -323,10 +354,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        // IMPORTAMOS setPersistence y browserLocalPersistence
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, deleteDoc, Timestamp, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-        // IMPORTAMOS deleteObject para borrar archivos
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -339,8 +368,7 @@
         };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app); const storage = getStorage(app);
 
-        // --- FUNCION DE COMPRESION DE IMAGENES (NUEVO) ---
-        // Redimensiona a max 1080px y baja calidad a 0.7 para ahorrar espacio
+        // --- FUNCION DE COMPRESION ---
         async function compressImage(file) {
             return new Promise((resolve, reject) => {
                 const maxWidth = 1080;
@@ -368,7 +396,7 @@
                                 lastModified: Date.now()
                             });
                             resolve(compressedFile);
-                        }, 'image/jpeg', 0.7); // Calidad 0.7 (70%) es excelente para web
+                        }, 'image/jpeg', 0.7); 
                     };
                     img.onerror = (error) => reject(error);
                 };
@@ -383,13 +411,21 @@
         const lightboxModal=document.getElementById('lightbox-modal'), lightboxImage=document.getElementById('lightbox-image');
 
         const appointmentModal=document.getElementById('appointment-modal'), closeAppointmentModalBtn=document.getElementById('close-appointment-modal-btn'), step1Design=document.getElementById('step-1-design'), step2Datetime=document.getElementById('step-2-datetime'), step3Payment=document.getElementById('step-3-payment'), appointmentGalleryGrid=document.getElementById('appointment-gallery-grid'), appointmentNextStep1Btn=document.getElementById('appointment-next-step-1'), appointmentForm=document.getElementById('appointment-form'), appointmentName=document.getElementById('appointment-name'), appointmentPhone=document.getElementById('appointment-phone'), appointmentDate=document.getElementById('appointment-date'), appointmentErrorStep1=document.getElementById('appointment-error-step1'), appointmentErrorStep2=document.getElementById('appointment-error-step2'), paymentConcept=document.getElementById('payment-concept'), whatsappLink=document.getElementById('whatsapp-link'), appointmentConfirmBtn=document.getElementById('appointment-confirm-btn'), appointmentSubmitText=document.getElementById('appointment-submit-text'), appointmentSpinner=document.getElementById('appointment-spinner');
+        
+        // REFERENCIAS NUEVAS DE UPLOAD CLIENTE
+        const clientDesignUpload = document.getElementById('client-design-upload');
+        const clientUploadPreview = document.getElementById('client-upload-preview');
+        const clientUploadImg = document.getElementById('client-upload-img');
+        const clientUploadText = document.getElementById('client-upload-text');
+        
         const appointmentTimeSlots = document.getElementById('appointment-time-slots');
         const appointmentTimeSlotsLoader = document.getElementById('appointment-time-slots-loader');
         const appointmentTimeSlotsPlaceholder = document.getElementById('appointment-time-slots-placeholder');
         
         const citasModal=document.getElementById('citas-modal'), closeCitasModalBtn=document.getElementById('close-citas-modal-btn'), citasListContainer=document.getElementById('citas-list-container');
 
-        let selectedDesignForAppointment=null, appointmentData={ selectedTime: null };
+        // Modificamos appointmentData para soportar archivo
+        let selectedDesignForAppointment=null, clientUploadedFile=null, appointmentData={ selectedTime: null };
         let isUserAdmin = false;
 
         // === INICIALIZAR FLATPICKR ===
@@ -442,7 +478,7 @@
             } catch (error) { console.error("Error populating times: ", error); appointmentTimeSlotsLoader.classList.add('hidden'); appointmentTimeSlots.innerHTML = '<p class="text-sm text-center text-red-500 col-span-full">Error al cargar horarios.</p>'; }
         }
         
-        // === Lógica Auth (CON PERSISTENCIA) ===
+        // === Lógica Auth ===
         onAuthStateChanged(auth,(user)=>{if(user){showAdminUI();}else{showVisitorUI();}loadDesigns();});
         adminLoginBtn.addEventListener('click',openLoginModal); closeModalBtn.addEventListener('click',closeLoginModal); loginModal.addEventListener('click',(e)=>{if(e.target===loginModal)closeLoginModal();});
         
@@ -451,7 +487,6 @@
             const email=emailInput.value,password=passwordInput.value;
             loginError.classList.add('hidden');
             try {
-                // Seteamos persistencia LOCAL para que no se cierre sesión al recargar
                 await setPersistence(auth, browserLocalPersistence);
                 await signInWithEmailAndPassword(auth,email,password);
                 closeLoginModal();
@@ -464,7 +499,7 @@
 
         function getImageUrl(fileName) { if (!fileName) return ''; if (fileName.startsWith('http')) return fileName; return './' + fileName; }
 
-        // === Lógica CRUD Diseños ===
+        // === Lógica CRUD Diseños (Admin Panel) ===
         async function loadDesigns(){
             galleryGrid.innerHTML='';
             try{
@@ -505,14 +540,7 @@
             try{
                 let finalFileName = null;
                 if(file){
-                    // COMPRIMIR ANTES DE SUBIR
-                    try {
-                        file = await compressImage(file);
-                        console.log("Imagen comprimida exitosamente.");
-                    } catch(err) {
-                        console.error("Error compresión, subiendo original", err);
-                    }
-
+                    try { file = await compressImage(file); } catch(err) { console.error("Error compresión, subiendo original", err); }
                     const uniqueName = Date.now() + '_' + file.name;
                     const storageRef = ref(storage, 'designs/' + uniqueName);
                     await uploadBytes(storageRef, file);
@@ -525,7 +553,7 @@
             }catch(error){ console.error("Error al guardar: ",error); adminError.textContent="Error al guardar."; adminError.classList.remove('hidden'); setAdminLoading(false); }
         });
         
-        // === BORRAR CON LIMPIEZA DE STORAGE ===
+        // === BORRAR CON LIMPIEZA ===
         galleryGrid.addEventListener('click',async(e)=>{
             const editBtn=e.target.closest('.admin-btn-edit'),deleteBtn=e.target.closest('.admin-btn-delete'),card=e.target.closest('.gallery-card');
             if(editBtn){const{id,filename,description, price}=card.dataset;openAdminModalForEdit(id,filename,description, price);return;}
@@ -533,17 +561,7 @@
                 const{id, filename}=card.dataset; 
                 if(confirm(`¿Eliminar este diseño y su imagen?`)){ 
                     try{ 
-                        // 1. Intentar borrar archivo de Storage si es URL de Firebase
-                        if (filename && filename.startsWith('http')) {
-                            try {
-                                const fileRef = ref(storage, filename);
-                                await deleteObject(fileRef);
-                                console.log("Archivo eliminado de Storage.");
-                            } catch (err) {
-                                console.warn("No se pudo borrar el archivo de storage (tal vez ya no existe), pero se borrará el registro.", err);
-                            }
-                        }
-                        // 2. Borrar registro de Firestore
+                        if (filename && filename.startsWith('http')) { try { const fileRef = ref(storage, filename); await deleteObject(fileRef); } catch (err) {} }
                         await deleteDoc(doc(db,"designs",id)); 
                         loadDesigns(); 
                     }catch(error){console.error("Error borrar:",error);alert("Error al eliminar.");} 
@@ -556,7 +574,31 @@
         // === Lógica Lightbox ===
         function closeLightboxModal(){lightboxModal.classList.add('hidden');lightboxImage.src="";} lightboxModal.addEventListener('click',closeLightboxModal);
 
-        // === Lógica Modal de Citas ===
+        // === Lógica Modal de Citas (CON UPLOAD DE CLIENTE) ===
+        
+        // Listener para el input de archivo del cliente
+        clientDesignUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Previsualizar
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    clientUploadImg.src = e.target.result;
+                    clientUploadPreview.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+                
+                // Actualizar estado
+                clientUploadedFile = file;
+                selectedDesignForAppointment = null; // Limpiar selección de grid
+                clientDesignUpload.parentElement.querySelector('label').classList.add('selected');
+                
+                // Limpiar visualmente la grid
+                appointmentGalleryGrid.querySelectorAll('.appointment-design').forEach(el=>el.classList.remove('selected'));
+                appointmentErrorStep1.classList.add('hidden');
+            }
+        });
+
         async function loadDesignsForAppointment(){
             appointmentGalleryGrid.innerHTML='';
             try{
@@ -570,9 +612,18 @@
                     cardElement.dataset.filename=design.fileName; 
                     cardElement.innerHTML=`<img src="${imgSrc}" alt="${design.description||'Diseño'}" class="w-full h-full object-contain bg-gray-200">`;
                     cardElement.addEventListener('click',()=>{
+                        // Seleccionar de Grid
                         appointmentGalleryGrid.querySelectorAll('.appointment-design').forEach(el=>el.classList.remove('selected'));
                         cardElement.classList.add('selected');
+                        
                         selectedDesignForAppointment=design.fileName; 
+                        
+                        // Limpiar upload manual
+                        clientUploadedFile = null;
+                        clientDesignUpload.value = ""; // Reset input
+                        clientUploadPreview.classList.add('hidden');
+                        clientDesignUpload.parentElement.querySelector('label').classList.remove('selected');
+
                         appointmentErrorStep1.classList.add('hidden');
                     });
                     appointmentGalleryGrid.appendChild(cardElement);
@@ -582,7 +633,15 @@
         
         function openAppointmentModal(){
             step1Design.classList.remove('hidden');step2Datetime.classList.add('hidden');step3Payment.classList.add('hidden');
-            appointmentForm.reset(); selectedDesignForAppointment=null; appointmentData={ selectedTime: null }; 
+            appointmentForm.reset(); 
+            // Resetear variables y UI de paso 1
+            selectedDesignForAppointment=null; 
+            clientUploadedFile = null;
+            appointmentData={ selectedTime: null }; 
+            clientDesignUpload.value = "";
+            clientUploadPreview.classList.add('hidden');
+            if(clientDesignUpload.parentElement.querySelector('label')) clientDesignUpload.parentElement.querySelector('label').classList.remove('selected');
+
             appointmentErrorStep1.classList.add('hidden'); appointmentErrorStep2.classList.add('hidden');
             appointmentTimeSlots.innerHTML = ''; appointmentTimeSlotsPlaceholder.classList.remove('hidden'); appointmentTimeSlotsLoader.classList.add('hidden');
             loadDesignsForAppointment();
@@ -591,7 +650,25 @@
         function closeAppointmentModal(){appointmentModal.classList.add('hidden');appointmentForm.reset();}
         agendarCitaBtn.addEventListener('click',(e)=>{e.preventDefault();openAppointmentModal();}); closeAppointmentModalBtn.addEventListener('click',closeAppointmentModal);
         
-        appointmentNextStep1Btn.addEventListener('click',()=>{if(!selectedDesignForAppointment){appointmentErrorStep1.classList.remove('hidden');return;}appointmentData.design=selectedDesignForAppointment;step1Design.classList.add('hidden');step2Datetime.classList.remove('hidden');});
+        appointmentNextStep1Btn.addEventListener('click',()=>{
+            // Validar que haya ALGUNA selección (o grid o archivo)
+            if(!selectedDesignForAppointment && !clientUploadedFile){
+                appointmentErrorStep1.classList.remove('hidden');
+                return;
+            }
+            
+            // Si es grid, lo guardamos temporalmente. Si es archivo, lo guardaremos al confirmar (paso 3)
+            if(selectedDesignForAppointment) {
+                appointmentData.design = selectedDesignForAppointment;
+                appointmentData.isCustomUpload = false;
+            } else {
+                appointmentData.design = "pending_upload"; // Placeholder
+                appointmentData.isCustomUpload = true;
+            }
+
+            step1Design.classList.add('hidden');
+            step2Datetime.classList.remove('hidden');
+        });
         
         appointmentForm.addEventListener('submit',(e)=>{
             e.preventDefault();
@@ -610,10 +687,32 @@
             step2Datetime.classList.add('hidden');step3Payment.classList.remove('hidden');
         });
         
+        // CONFIRMACIÓN FINAL (SUBIDA DE ARCHIVO CLIENTE)
         appointmentConfirmBtn.addEventListener('click',async()=>{
             setAppointmentLoading(true);
             try{
+                // Si el cliente subió archivo, lo procesamos AHORA
+                if (appointmentData.isCustomUpload && clientUploadedFile) {
+                    try {
+                        let fileToUpload = clientUploadedFile;
+                        try { fileToUpload = await compressImage(clientUploadedFile); } catch(err) { console.warn("Fallo compresión cliente", err); }
+                        
+                        const uniqueName = 'client_' + Date.now() + '_' + fileToUpload.name;
+                        const storageRef = ref(storage, 'client-uploads/' + uniqueName);
+                        await uploadBytes(storageRef, fileToUpload);
+                        const url = await getDownloadURL(storageRef);
+                        appointmentData.design = url; // Guardamos la URL final
+                    } catch(uploadErr) {
+                        console.error("Error subiendo imagen cliente", uploadErr);
+                        alert("Hubo un error subiendo tu imagen. Intentaremos agendar sin ella.");
+                        appointmentData.design = "Error subida imagen";
+                    }
+                }
+
                 appointmentData.createdAt=Timestamp.fromDate(new Date()); appointmentData.status='pendiente';
+                // Limpiamos banderas temporales antes de guardar
+                delete appointmentData.isCustomUpload; 
+
                 await addDoc(collection(db,"appointments"),appointmentData);
                 setAppointmentLoading(false);
                 step3Payment.innerHTML=`<h2 class="text-2xl font-bold text-center mb-4 font-cursive dark:text-pink-100">¡Cita Pre-registrada!</h2><p class="text-center text-gray-700 dark:text-gray-100">Envía tu comprobante por WhatsApp para finalizar.</p>`;
@@ -641,7 +740,11 @@
                     if(status!=='cancelada'){ if(status==='pendiente'){ actionButtonsHTML+=`<button data-id="${citaId}" class="cita-action-btn confirm-btn mr-1">Confirmar</button>`; } actionButtonsHTML+=`<button data-id="${citaId}" class="cita-action-btn cancel-btn mr-1">Cancelar</button>`; }
                     actionButtonsHTML+=`<button data-id="${citaId}" class="cita-action-btn delete-cita-btn bg-gray-700 text-white hover:bg-gray-900">Eliminar</button>`;
                     const imgSrc = getImageUrl(cita.design);
-                    const designHTML = cita.design ? `<div class="flex items-center gap-2 mt-1"><img src="${imgSrc}" class="w-12 h-12 object-contain rounded-md bg-gray-200 dark:bg-gray-700 cursor-pointer admin-cita-img"><p class="text-xs truncate w-32">Ver diseño</p></div>` : '<p class="text-sm">Sin diseño</p>';
+                    // Detectar si es url larga (cliente) para mostrar etiqueta
+                    const isClientUpload = cita.design && cita.design.includes('client-uploads');
+                    const uploadLabel = isClientUpload ? '<span class="text-[10px] bg-blue-100 text-blue-800 px-1 rounded">Diseño Propio</span>' : '';
+                    
+                    const designHTML = cita.design ? `<div class="flex items-center gap-2 mt-1"><img src="${imgSrc}" class="w-12 h-12 object-contain rounded-md bg-gray-200 dark:bg-gray-700 cursor-pointer admin-cita-img"><div><p class="text-xs truncate w-32">Ver diseño</p>${uploadLabel}</div></div>` : '<p class="text-sm">Sin diseño</p>';
                     const citaElement=document.createElement('div');
                     citaElement.className='cita-item p-4 flex justify-between items-center flex-wrap gap-2';
                     citaElement.innerHTML=`<div><h3 class="font-bold text-lg text-pink-700 dark:text-pink-300">${cita.name}</h3><p class="font-semibold">${formattedDate} - ${cita.time}</p><p class="text-sm">Tel: ${cita.phone||'N/A'}</p>${designHTML}<p class="text-sm font-semibold ${statusClass} mt-2">Estado: ${statusText}</p></div><div class="flex-shrink-0 mt-2 sm:mt-0">${actionButtonsHTML}</div>`;
