@@ -109,8 +109,47 @@
         #lightbox-modal { background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
         #lightbox-image { max-height: 90vh; max-width: 90vw; }
 
-        #appointment-gallery-grid { max-height: 300px; overflow-y: auto; }
-        .appointment-design.selected { border: 4px solid #d19788; box-shadow: 0 0 15px #d19788; }
+        /* --- CORRECCIÓN DE LA GRID DEL MODAL --- */
+        #appointment-gallery-grid { 
+            max-height: 40vh; /* Altura máxima adaptable */
+            overflow-y: auto; 
+            padding-right: 4px; /* Espacio para scrollbar */
+        }
+        /* Scrollbar estilizado para el modal */
+        #appointment-gallery-grid::-webkit-scrollbar { width: 6px; }
+        #appointment-gallery-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+        #appointment-gallery-grid::-webkit-scrollbar-thumb { background: rgba(134, 25, 61, 0.5); border-radius: 4px; }
+
+        .appointment-design {
+            cursor: pointer;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: all 0.2s;
+            position: relative;
+            /* Forzar aspecto cuadrado */
+            aspect-ratio: 1 / 1;
+        }
+        
+        .appointment-design:hover { transform: scale(1.02); }
+        
+        .appointment-design.selected { 
+            border: 4px solid #d19788; 
+            box-shadow: 0 0 15px #d19788; 
+            transform: scale(0.95); /* Efecto de presionado */
+        }
+        /* Capa oscura cuando se selecciona */
+        .appointment-design.selected::after {
+            content: '✓';
+            position: absolute;
+            inset: 0;
+            background-color: rgba(134, 25, 61, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
 
         .time-slot-btn {
             padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem;
@@ -260,7 +299,7 @@
     </div>
 
     <div id="appointment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
-        <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8 w-full max-w-md relative dark:bg-gray-800" style="color: #86193d;">
+        <div class="bg-white rounded-lg shadow-2xl p-6 md:p-8 w-full max-w-md relative dark:bg-gray-800 max-h-[95vh] overflow-y-auto" style="color: #86193d;">
             <button id="close-appointment-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
 
             <div id="step-1-design">
@@ -274,13 +313,14 @@
                     <input type="file" id="client-design-upload" accept="image/*" class="hidden">
                     <div id="client-upload-preview" class="mt-2 hidden">
                         <p class="text-xs text-green-600 dark:text-green-400 mb-1">¡Imagen seleccionada!</p>
-                        <img id="client-upload-img" src="" class="h-24 w-auto mx-auto rounded-md shadow-sm">
+                        <img id="client-upload-img" src="" class="h-24 w-auto mx-auto rounded-md shadow-sm object-cover">
                     </div>
                 </div>
 
                 <div class="text-center mb-2 text-sm text-gray-500 dark:text-gray-400 font-semibold">- O elige del catálogo -</div>
 
-                <div id="appointment-gallery-grid" class="grid grid-cols-3 gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-md"></div>
+                <div id="appointment-gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-md"></div>
+                
                 <div id="appointment-error-step1" class="text-red-600 text-sm text-center mt-4 hidden">Debes seleccionar un diseño o subir una foto.</div>
                 <button id="appointment-next-step-1" class="w-full mt-4 bg-pink-600 text-white py-2 rounded-md font-bold hover:bg-pink-700 transition-colors dark:bg-pink-700 dark:hover:bg-pink-600">Siguiente</button>
             </div>
@@ -610,7 +650,8 @@
                     const cardElement=document.createElement('div');
                     cardElement.className='appointment-design gallery-item';
                     cardElement.dataset.filename=design.fileName; 
-                    cardElement.innerHTML=`<img src="${imgSrc}" alt="${design.description||'Diseño'}" class="w-full h-full object-contain bg-gray-200">`;
+                    // CORRECCION: Usar object-cover para que llene el cuadro y no deje espacios negros
+                    cardElement.innerHTML=`<img src="${imgSrc}" alt="${design.description||'Diseño'}" class="w-full h-full object-cover bg-gray-200">`;
                     cardElement.addEventListener('click',()=>{
                         // Seleccionar de Grid
                         appointmentGalleryGrid.querySelectorAll('.appointment-design').forEach(el=>el.classList.remove('selected'));
