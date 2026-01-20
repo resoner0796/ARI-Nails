@@ -111,38 +111,53 @@
 
         /* --- CORRECCIÓN DE LA GRID DEL MODAL --- */
         #appointment-gallery-grid { 
-            max-height: 40vh; /* Altura máxima adaptable */
+            max-height: 45vh; /* Un poco más de altura */
             overflow-y: auto; 
-            padding-right: 4px; /* Espacio para scrollbar */
+            padding-right: 4px; 
+            padding-bottom: 1rem;
         }
-        /* Scrollbar estilizado para el modal */
         #appointment-gallery-grid::-webkit-scrollbar { width: 6px; }
         #appointment-gallery-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
         #appointment-gallery-grid::-webkit-scrollbar-thumb { background: rgba(134, 25, 61, 0.5); border-radius: 4px; }
 
+        /* ESTILO CORREGIDO PARA EVITAR EMPALMES */
         .appointment-design {
             cursor: pointer;
             border-radius: 0.5rem;
             overflow: hidden;
             transition: all 0.2s;
             position: relative;
-            /* Forzar aspecto cuadrado */
-            aspect-ratio: 1 / 1;
+            
+            /* TRUCO INFALIBLE DE CSS PARA CUADRADOS RESPONSIVOS */
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%; /* La altura será igual al ancho */
+            background-color: #f3f4f6; /* Fondo gris pálido por si tarda en cargar */
         }
         
-        .appointment-design:hover { transform: scale(1.02); }
+        .appointment-design:hover { transform: scale(1.02); z-index: 10; }
+        
+        /* La imagen se posiciona "flotando" sobre el cuadrado forzado */
+        .appointment-design img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Recorta para llenar el cuadrado */
+        }
         
         .appointment-design.selected { 
             border: 4px solid #d19788; 
             box-shadow: 0 0 15px #d19788; 
-            transform: scale(0.95); /* Efecto de presionado */
+            transform: scale(0.95);
         }
-        /* Capa oscura cuando se selecciona */
+        /* Checkmark al seleccionar */
         .appointment-design.selected::after {
             content: '✓';
             position: absolute;
             inset: 0;
-            background-color: rgba(134, 25, 61, 0.4);
+            background-color: rgba(134, 25, 61, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -650,8 +665,8 @@
                     const cardElement=document.createElement('div');
                     cardElement.className='appointment-design gallery-item';
                     cardElement.dataset.filename=design.fileName; 
-                    // CORRECCION: Usar object-cover para que llene el cuadro y no deje espacios negros
-                    cardElement.innerHTML=`<img src="${imgSrc}" alt="${design.description||'Diseño'}" class="w-full h-full object-cover bg-gray-200">`;
+                    // IMAGEN ABSOLUTA
+                    cardElement.innerHTML=`<img src="${imgSrc}" alt="${design.description||'Diseño'}">`;
                     cardElement.addEventListener('click',()=>{
                         // Seleccionar de Grid
                         appointmentGalleryGrid.querySelectorAll('.appointment-design').forEach(el=>el.classList.remove('selected'));
