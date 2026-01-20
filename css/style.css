@@ -215,3 +215,63 @@ header {
 .dark .custom-file-upload { border-color: #4b5563; }
 .dark .custom-file-upload:hover { border-color: #fce7f3; background-color: rgba(252, 231, 243, 0.1); }
 .custom-file-upload.selected { border-color: #16a34a; background-color: rgba(22, 163, 74, 0.1); color: #16a34a; }
+
+/* --- AJUSTE TAMAÑO TITULO (Punto 1) --- */
+/* Busca la clase donde usabas text-5xl y reemplázala en el HTML, pero aquí ajustamos la responsividad si quieres forzarlo desde css, aunque lo haremos en HTML mejor. */
+
+/* --- ESTILOS CARRUSEL (Punto 3) --- */
+.carousel-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    background-color: rgba(0,0,0,0.2);
+    aspect-ratio: 16/9;
+    max-height: 400px;
+}
+
+.carousel-slide {
+    display: none;
+    width: 100%;
+    height: 100%;
+}
+
+.carousel-slide.active {
+    display: block;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* O 'contain' si prefieres que se vea la imagen completa sin recortes */
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    z-index: 10;
+    border-radius: 50%;
+    transition: background 0.3s;
+}
+.carousel-btn:hover { background-color: rgba(134, 25, 61, 0.8); }
+.carousel-prev { left: 10px; }
+.carousel-next { right: 10px; }
+
+/* Lista de banners en el admin */
+.banner-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.dark .banner-list-item { border-color: #4b5563; }
