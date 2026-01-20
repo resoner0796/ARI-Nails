@@ -104,8 +104,14 @@ const adminLoginBtn=document.getElementById('admin-login-btn'), loginModal=docum
 const adminLink=document.getElementById('admin-link'), logoutBtn=document.getElementById('logout-btn'), agendarCitaBtn=document.getElementById('agendar-cita-btn'), citasLink=document.getElementById('citas-link'), bannerConfigBtn=document.getElementById('banner-config-btn');
 const adminModal=document.getElementById('admin-modal'), adminModalTitle=document.getElementById('admin-modal-title'), closeAdminModalBtn=document.getElementById('close-admin-modal-btn'), adminForm=document.getElementById('admin-form'), editDocIdInput=document.getElementById('edit-doc-id'), imageInput=document.getElementById('image-input'), categoryInput=document.getElementById('category-input'), descriptionInput=document.getElementById('description-input'), priceInput=document.getElementById('price-input'), adminError=document.getElementById('admin-error'), adminSubmitBtn=document.getElementById('admin-submit-btn'), adminSubmitText=document.getElementById('admin-submit-text'), adminSpinner=document.getElementById('admin-spinner'), galleryGrid=document.getElementById('gallery-grid'), categoryFiltersContainer=document.getElementById('category-filters');
 
-// Referencias Banner
-const bannerModal=document.getElementById('banner-modal'), closeBannerModalBtn=document.getElementById('close-banner-modal-btn'), bannerForm=document.getElementById('banner-form'), bannerUploadInput=document.getElementById('banner-upload-input'), bannerError=document.getElementById('banner-error'), bannerSubmitBtn=document.getElementById('banner-submit-btn'), bannerSubmitText=document.getElementById('banner-submit-text'), bannerSpinner=document.getElementById('banner-spinner'), heroBanner=document.getElementById('hero-banner'), heroBannerImg=document.getElementById('hero-banner-img');
+// Referencias Banner (ACTUALIZADAS PARA CARRUSEL)
+const bannerModal=document.getElementById('banner-modal'), closeBannerModalBtn=document.getElementById('close-banner-modal-btn'), bannerForm=document.getElementById('banner-form'), bannerUploadInput=document.getElementById('banner-upload-input'), bannerError=document.getElementById('banner-error'), bannerSubmitBtn=document.getElementById('banner-submit-btn'), bannerSubmitText=document.getElementById('banner-submit-text'), bannerSpinner=document.getElementById('banner-spinner');
+// Nuevas referencias para el carrusel
+const heroBanner=document.getElementById('hero-banner'); // Contenedor principal
+const slidesContainer = document.getElementById('carousel-slides-container');
+const prevBtn = document.getElementById('prev-slide');
+const nextBtn = document.getElementById('next-slide');
+const adminBannerList = document.getElementById('admin-banner-list');
 
 const lightboxModal=document.getElementById('lightbox-modal'), lightboxImage=document.getElementById('lightbox-image');
 const appointmentModal=document.getElementById('appointment-modal'), closeAppointmentModalBtn=document.getElementById('close-appointment-modal-btn'), step1Design=document.getElementById('step-1-design'), step2Datetime=document.getElementById('step-2-datetime'), step3Payment=document.getElementById('step-3-payment'), appointmentGalleryGrid=document.getElementById('appointment-gallery-grid'), appointmentNextStep1Btn=document.getElementById('appointment-next-step-1'), appointmentForm=document.getElementById('appointment-form'), appointmentName=document.getElementById('appointment-name'), appointmentPhone=document.getElementById('appointment-phone'), appointmentDate=document.getElementById('appointment-date'), appointmentErrorStep1=document.getElementById('appointment-error-step1'), appointmentErrorStep2=document.getElementById('appointment-error-step2'), paymentConcept=document.getElementById('payment-concept'), whatsappLink=document.getElementById('whatsapp-link'), appointmentConfirmBtn=document.getElementById('appointment-confirm-btn'), appointmentSubmitText=document.getElementById('appointment-submit-text'), appointmentSpinner=document.getElementById('appointment-spinner'), clientDesignUpload = document.getElementById('client-design-upload'), clientUploadPreview = document.getElementById('client-upload-preview'), clientUploadImg = document.getElementById('client-upload-img');
@@ -116,24 +122,119 @@ let selectedDesignForAppointment=null, clientUploadedFile=null, appointmentData=
 let isUserAdmin = false;
 let allDesigns = []; // Array local para filtrar
 
+// Variables para el carrusel
+let currentSlide = 0;
+let carouselInterval;
+let bannersData = [];
+
 // === INICIALIZAR ===
 flatpickr("#appointment-date", { locale: "es", minDate: "today", disableMobile: "true", disable: [ function(date) { return (date.getDay() === 1 || date.getDay() === 2 || date.getDay() === 3 || date.getDay() === 4); } ], onChange: function(selectedDates, dateStr, instance) { populateAvailableTimes(dateStr); } });
-loadBanner();
+loadBanners(); // Cargamos el carrusel al inicio
 
-// === LÓGICA DE BANNER ===
-async function loadBanner() {
+// === LÓGICA DE BANNER CARRUSEL (NUEVA) ===
+async function loadBanners() {
     try {
-        const docRef = doc(db, "settings", "general");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().bannerUrl) {
-            heroBannerImg.src = docSnap.data().bannerUrl;
+        // Usamos una colección "promotional_banners" ordenada por fecha de creación
+        const q = query(collection(db, "promotional_banners"), orderBy("createdAt", "asc"));
+        const querySnapshot = await getDocs(q);
+        
+        bannersData = [];
+        slidesContainer.innerHTML = ''; // Limpiar slider
+        
+        querySnapshot.forEach((doc) => {
+            bannersData.push({ id: doc.id, ...doc.data() });
+        });
+
+        if (bannersData.length > 0) {
+            bannersData.forEach((banner, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
+                slideDiv.innerHTML = `<img src="${banner.url}" alt="Banner ${index + 1}">`;
+                slidesContainer.appendChild(slideDiv);
+            });
             heroBanner.classList.remove('hidden');
+            startCarousel();
+        } else {
+            heroBanner.classList.add('hidden');
         }
-    } catch (e) { console.log("No banner settings found"); }
+    } catch (e) { console.error("Error cargando banners", e); }
 }
 
-bannerConfigBtn.addEventListener('click', (e) => { e.preventDefault(); bannerForm.reset(); bannerModal.classList.remove('hidden'); });
+function showSlide(index) {
+    const slides = document.querySelectorAll('.carousel-slide');
+    if (slides.length === 0) return;
+    
+    if (index >= slides.length) currentSlide = 0;
+    else if (index < 0) currentSlide = slides.length - 1;
+    else currentSlide = index;
+
+    slides.forEach(slide => slide.classList.remove('active'));
+    slides[currentSlide].classList.add('active');
+}
+
+function startCarousel() {
+    if (carouselInterval) clearInterval(carouselInterval);
+    carouselInterval = setInterval(() => { showSlide(currentSlide + 1); }, 5000); // Cambia cada 5 segundos
+}
+
+if(prevBtn && nextBtn) {
+    prevBtn.addEventListener('click', () => { showSlide(currentSlide - 1); startCarousel(); }); // Reinicia el timer al hacer click manual
+    nextBtn.addEventListener('click', () => { showSlide(currentSlide + 1); startCarousel(); });
+}
+
+// --- ADMIN BANNERS ---
+bannerConfigBtn.addEventListener('click', (e) => { 
+    e.preventDefault(); 
+    bannerForm.reset(); 
+    renderAdminBannerList(); // Mostrar lista al abrir modal
+    bannerModal.classList.remove('hidden'); 
+});
+
 closeBannerModalBtn.addEventListener('click', () => bannerModal.classList.add('hidden'));
+
+function renderAdminBannerList() {
+    adminBannerList.innerHTML = '';
+    if (bannersData.length === 0) {
+        adminBannerList.innerHTML = '<p class="text-gray-500 italic text-center">No hay banners activos.</p>';
+        return;
+    }
+    bannersData.forEach(banner => {
+        const item = document.createElement('div');
+        item.className = 'banner-list-item';
+        item.innerHTML = `
+            <div class="flex items-center gap-2">
+                <img src="${banner.url}" class="w-10 h-6 object-cover rounded">
+                <span class="text-xs truncate w-32">Banner</span>
+            </div>
+            <button class="delete-banner-btn text-red-500 hover:text-red-700 font-bold text-xs border border-red-500 rounded px-2 py-1" data-id="${banner.id}" data-url="${banner.url}">Eliminar</button>
+        `;
+        adminBannerList.appendChild(item);
+    });
+
+    // Listeners para eliminar
+    document.querySelectorAll('.delete-banner-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if(confirm('¿Eliminar este banner?')) {
+                const id = btn.dataset.id;
+                const url = btn.dataset.url;
+                try {
+                    // Borrar de Storage (si es url completa de firebase)
+                    if (url.includes('firebasestorage')) {
+                        const fileRef = ref(storage, url);
+                        await deleteObject(fileRef).catch(err => console.log("No se pudo borrar img storage", err));
+                    }
+                    // Borrar de Firestore
+                    await deleteDoc(doc(db, "promotional_banners", id));
+                    await loadBanners(); // Recargar carrusel
+                    renderAdminBannerList(); // Recargar lista admin
+                } catch(err) {
+                    alert("Error al eliminar banner");
+                }
+            }
+        });
+    });
+}
 
 bannerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -143,13 +244,21 @@ bannerForm.addEventListener('submit', async (e) => {
     bannerSubmitText.classList.add('hidden'); bannerSpinner.classList.remove('hidden'); bannerSubmitBtn.disabled = true;
     try {
         const compressed = await compressImage(file);
-        const storageRef = ref(storage, 'settings/banner_img');
+        const uniqueName = 'banner_' + Date.now();
+        const storageRef = ref(storage, 'banners/' + uniqueName); // Carpeta banners
         await uploadBytes(storageRef, compressed);
         const url = await getDownloadURL(storageRef);
         
-        await setDoc(doc(db, "settings", "general"), { bannerUrl: url }, { merge: true });
-        heroBannerImg.src = url; heroBanner.classList.remove('hidden');
-        bannerModal.classList.add('hidden');
+        // Agregar a la colección promotional_banners
+        await addDoc(collection(db, "promotional_banners"), {
+            url: url,
+            createdAt: Timestamp.fromDate(new Date())
+        });
+
+        await loadBanners(); // Actualizar carrusel
+        renderAdminBannerList(); // Actualizar lista
+        bannerForm.reset();
+        // No cerramos el modal para permitir subir más si se desea
     } catch (error) {
         console.error(error); bannerError.textContent = "Error al subir banner"; bannerError.classList.remove('hidden');
     } finally {
@@ -243,14 +352,17 @@ async function loadDesigns(){
             if(data.category) categories.add(data.category.trim());
         });
 
-        // Render Categorias
+        // Render Categorias (Ordenadas Alfabéticamente)
         if(categories.size > 0) {
+            // Convertimos el Set a Array y lo ordenamos
+            const sortedCategories = Array.from(categories).sort();
+
             const allBtn = document.createElement('button');
             allBtn.textContent = "Todas"; allBtn.className = "category-filter-btn active";
             allBtn.onclick = () => filterDesigns('all', allBtn);
             categoryFiltersContainer.appendChild(allBtn);
 
-            categories.forEach(cat => {
+            sortedCategories.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.textContent = cat; btn.className = "category-filter-btn";
                 btn.onclick = () => filterDesigns(cat, btn);
